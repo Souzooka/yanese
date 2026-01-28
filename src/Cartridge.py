@@ -17,4 +17,7 @@ class Cartridge:
             return
 
     def is_valid(self) -> bool:
-        return self.__data[0:4] == MAGIC
+        for i in range(len(MAGIC)):
+            if self.__data[i] != MAGIC[i]:
+                return False
+        return True
