@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling", "numpy", "pytest"]
+requires-python = ">= 3.10"
+build-backend = "hatchling.build"
+
+[project]
+authors = [
+    {name = "Dakota Smith"},
+]
+description = "NES emulator implemented within Python"
+name = "yanese"
+version = "0.0.0"
+
+[pytest]
+addopts = ["--import-mode=importlib"]
+strict = true
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+
+[tool.isort]
+line_length = 120
+profile = "black"
+
+[tool.pylint]
