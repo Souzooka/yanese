@@ -3,7 +3,7 @@ from __future__ import annotations
 import binascii
 from collections.abc import Collection
 from enum import IntEnum, auto, unique
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import util.byte as byte
 from util.console_types import ConsoleType
@@ -97,9 +97,41 @@ class Cartridge:
     def __init__(self, data: Collection) -> None:
         self.__data = data
         self.header = Cartridge.Header(data)
+        self.__sectors = self.__generateSectors()
 
     def is_valid(self) -> bool:
         return self.header.is_valid()
+
+    # Sectors
+
+    def __generateSectors(self) -> Dict[str, Tuple[int, int]]:
+        # Returns the (position, size) of each sector
+        result = {}
+        result["header"] = (0, 16)
+        result["trainer"] = (sum(result["header"]), 512 if self.header.has_trainer_data else 0)
+        result["prg-rom"] = (sum(result["trainer"]), 16384 * self.header.prg_rom_pages)
+        result["chr-rom"] = (sum(result["prg-rom"]), 8192 * self.header.chr_rom_pages)
+        # TODO
+        result["pc-inst-rom"] = (sum(result["chr-rom"]), 0)
+        result["pc-prom"] = (sum(result["pc-inst-rom"]), 0)
+
+        return result
+
+    def trainer(self) -> bytes:
+        start, size = self.__sectors["trainer"]
+        return bytes(self.__data[start : start + size])
+
+    def prg(self) -> bytes:
+        start, size = self.__sectors["prg-rom"]
+        return bytes(self.__data[start : start + size])
+
+    def chr(self) -> bytes:
+        start, size = self.__sectors["chr-rom"]
+        return bytes(self.__data[start : start + size])
+
+    # TODO: Play-choice sectors
+
+    # Savestate
 
     def checksum(self) -> int:
         return binascii.crc32(self.__data)

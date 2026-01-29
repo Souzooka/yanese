@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.Cartridge import Cartridge
 from src.util.console_types import ConsoleType
 from src.util.mirroring_modes import MirroringMode
@@ -175,6 +177,39 @@ class TestCartridge:
         assert header.extended_console_type is None
         assert header.misc_roms_present is None
         assert header.default_expansion_device is None
+
+    def test_sectors(self):
+        # Cartridge returns the sectors contained within
+        data = bytearray(list(TestCartridge.MAGIC) + [0] * 12)
+        data[6] = 4  # has trainer data
+        data[4] = 2  # 2 units of prg-rom
+        data[5] = 2  # 2 units of chr-rom
+
+        _trainer = bytearray(np.full(512, 1, dtype=np.uint8))  # 512 bytes of 1
+        _prg = bytearray(np.full(16384 * 2, 2, dtype=np.uint8))  # 16384 * 2 bytes of 2
+        _chr = bytearray(np.full(8192 * 2, 3, dtype=np.uint8))  # 8192 * 2 bytes of 3
+        data = data + _trainer + _prg + _chr
+        cartridge = Cartridge(data)
+
+        # trainer check
+        trainer = cartridge.trainer()
+        assert len(trainer) == len(_trainer)
+        assert trainer[0] == _trainer[0]
+        assert trainer[-1] == _trainer[-1]
+
+        # prg check
+        prg = cartridge.prg()
+        assert len(prg) == len(_prg)
+        assert prg[0] == _prg[0]
+        assert prg[-1] == _prg[-1]
+
+        # chr check
+        chr = cartridge.chr()
+        assert len(chr) == len(_chr)
+        assert chr[0] == _chr[0]
+        assert chr[-1] == _chr[-1]
+
+        # TODO: Play-choice stuff
 
     def test_save_state(self):
         # Unlike most components, Cartridge shouldn't be modified upon loading savestate
