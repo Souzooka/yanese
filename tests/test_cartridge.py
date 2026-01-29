@@ -1,5 +1,7 @@
 from src.Cartridge import Cartridge
+from src.util.console_types import ConsoleType
 from src.util.mirroring_modes import MirroringMode
+from src.util.timing_modes import TimingMode
 
 
 class TestCartridge:
@@ -28,7 +30,7 @@ class TestCartridge:
         assert not cartridge.is_valid(), "Cartridge should be invalid when passed invalid header."
 
     def test_ines_header(self):
-        data = bytearray([0x4E, 0x45, 0x53, 0x1A] + [0] * 12)
+        data = bytearray(list(TestCartridge.MAGIC) + [0] * 12)
 
         data[4] = 0x20  # 32 PRG-ROM pages
         data[5] = 0x20  # 32 CHR-ROM pages
@@ -43,7 +45,7 @@ class TestCartridge:
         assert header.has_prg_ram
         assert header.prg_ram_size == 0x2000
         assert header.chr_ram_size == 0x2000
-        assert header.has_512_byte_padding
+        assert header.has_trainer_data
         assert header.mirroring_mode == MirroringMode.FOUR_SCREEN
         assert header.mapper_id == 4
 
@@ -60,7 +62,7 @@ class TestCartridge:
         assert not header.has_prg_ram
         assert header.prg_ram_size == 0x2000
         assert header.chr_ram_size == 0x2000
-        assert not header.has_512_byte_padding
+        assert not header.has_trainer_data
         assert header.mirroring_mode == MirroringMode.HORIZONTAL
         assert header.mapper_id == 200
 
@@ -77,10 +79,99 @@ class TestCartridge:
         assert not header.has_prg_ram
         assert header.prg_ram_size == 0x2000
         assert header.chr_ram_size == 0x2000
-        assert header.has_512_byte_padding
+        assert header.has_trainer_data
         assert header.mirroring_mode == MirroringMode.VERTICAL
         assert header.mapper_id == 0
 
     def test_nes2_header(self):
-        # TODO
-        pass
+        # for byte 7, bit 2 being set and bit 3 being clear indicates NES2 format (data[7] & 0xC == 0x8)
+        BLANK_NES2_HEADER = bytearray(list(TestCartridge.MAGIC) + [0] * 3 + [0x8] + [0] * 8)
+
+        # Near blank valid NES2 header
+        data = bytearray(BLANK_NES2_HEADER)
+        data[15] = 1  # Expects standard NES controller
+        cartridge = Cartridge(data)
+        header = cartridge.header
+        assert header.format == Cartridge.Format.NES2
+        assert header.default_expansion_device == 1
+
+        # maximum power!!
+        data = bytearray(BLANK_NES2_HEADER)
+        data[4:15] = [0xFF] * 12
+        data[7] = 0xFB
+        cartridge = Cartridge(data)
+        header = cartridge.header
+        assert header.format == Cartridge.Format.NES2
+        assert header.prg_rom_pages == 0xFFF
+        assert header.chr_rom_pages == 0xFFF
+        assert not header.uses_chr_ram
+        assert header.has_prg_ram
+        assert header.prg_ram_size == 64 << 0xF
+        assert header.chr_ram_size == 64 << 0xF
+        assert header.has_trainer_data
+        assert header.mirroring_mode == MirroringMode.FOUR_SCREEN
+        assert header.mapper_id == 0xFFF
+        assert header.console_type == ConsoleType.EXTENDED
+        assert header.sub_mapper_id == 0xF
+        assert header.prg_nvram_size == 64 << 0xF
+        assert header.chr_nvram_size == 64 << 0xF
+        assert header.timing_mode == TimingMode.UA6538
+        assert header.vs_ppu_type is None
+        assert header.vs_hardware_type is None
+        assert header.extended_console_type == 0xF
+        assert header.misc_roms_present == 0x3
+        # NOTE: NESDEV says only 6 bits used here, but also specifies devices up to 0x4F.
+        assert header.default_expansion_device == 0x3F
+
+        # Above w/ VS. system console set
+        data = bytearray(BLANK_NES2_HEADER)
+        data[4:15] = [0xFF] * 12
+        data[7] = 0xF9
+        cartridge = Cartridge(data)
+        header = cartridge.header
+        assert header.format == Cartridge.Format.NES2
+        assert header.prg_rom_pages == 0xFFF
+        assert header.chr_rom_pages == 0xFFF
+        assert not header.uses_chr_ram
+        assert header.has_prg_ram
+        assert header.prg_ram_size == 64 << 0xF
+        assert header.chr_ram_size == 64 << 0xF
+        assert header.has_trainer_data
+        assert header.mirroring_mode == MirroringMode.FOUR_SCREEN
+        assert header.mapper_id == 0xFFF
+        assert header.console_type == ConsoleType.VS
+        assert header.sub_mapper_id == 0xF
+        assert header.prg_nvram_size == 64 << 0xF
+        assert header.chr_nvram_size == 64 << 0xF
+        assert header.timing_mode == TimingMode.UA6538
+        assert header.vs_hardware_type == 0xF
+        assert header.vs_ppu_type == 0xF
+        assert header.extended_console_type is None
+        assert header.misc_roms_present == 0x3
+        # NOTE: NESDEV says only 6 bits used here, but also specifies devices up to 0x4F.
+        assert header.default_expansion_device == 0x3F
+
+        # INES format sets properly sets INES variables/ignores NES2 even if bytes 7-15 are fully utilized
+        data = bytes(list(TestCartridge.MAGIC) + [0xFF] * 12)
+        cartridge = Cartridge(data)
+        header = cartridge.header
+        assert header.format == Cartridge.Format.INES
+        assert header.prg_rom_pages == 0xFF
+        assert header.chr_rom_pages == 0xFF
+        assert not header.uses_chr_ram
+        assert header.has_prg_ram
+        assert header.prg_ram_size == 0x2000
+        assert header.chr_ram_size == 0x2000
+        assert header.has_trainer_data
+        assert header.mirroring_mode == MirroringMode.FOUR_SCREEN
+        assert header.mapper_id == 0xFF
+        assert header.console_type == ConsoleType.NES
+        assert header.sub_mapper_id is None
+        assert header.prg_nvram_size is None
+        assert header.chr_nvram_size is None
+        assert header.timing_mode == TimingMode.RP2C02
+        assert header.vs_hardware_type is None
+        assert header.vs_ppu_type is None
+        assert header.extended_console_type is None
+        assert header.misc_roms_present is None
+        assert header.default_expansion_device is None

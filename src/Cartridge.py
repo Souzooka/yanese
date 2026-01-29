@@ -41,7 +41,7 @@ class Cartridge:
             self.prg_ram_size = 0x2000  # 8 KB by default
             self.chr_ram_size = 0x2000  # 8 KB by default
             # This is the "trainer" data which seems to go unused today
-            self.has_512_byte_padding = byte.get_flag(data[6], 2)
+            self.has_trainer_data = byte.get_flag(data[6], 2)
             self.mirroring_mode = MirroringMode.VERTICAL if byte.get_flag(data[6], 0) else MirroringMode.HORIZONTAL
             self.mirroring_mode = MirroringMode.FOUR_SCREEN if byte.get_flag(data[6], 3) else self.mirroring_mode
             self.mapper_id = byte.build_u8(byte.upper_nibble(data[6]), byte.upper_nibble(data[7]))
@@ -50,7 +50,7 @@ class Cartridge:
             nes2 = self.format == Cartridge.Format.NES2
             self.console_type = ConsoleType(byte.get_bits(data[7], 0, 2)) if nes2 else ConsoleType.NES
             self.mapper_id = self.mapper_id | (byte.lower_nibble(data[8]) << 8) if nes2 else self.mapper_id
-            self.sub_mapper_id = byte.upper_nibble(data[9]) if nes2 else None
+            self.sub_mapper_id = byte.upper_nibble(data[8]) if nes2 else None
             self.prg_rom_pages = self.prg_rom_pages | (byte.lower_nibble(data[9]) << 8) if nes2 else self.prg_rom_pages
             self.chr_rom_pages = self.chr_rom_pages | (byte.upper_nibble(data[9]) << 8) if nes2 else self.chr_rom_pages
             self.prg_nvram_size = 0 if nes2 else None
