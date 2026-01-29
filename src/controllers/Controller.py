@@ -45,10 +45,10 @@ class Controller(ControllerBase):
         # (we simulate this with a psuedo-9th button which is always pressed as a logic optimization)
         self.__buttons = [0] * 8 + [1]
 
-        self.__cursor = 0
+        self._cursor = 0
         """Indicates which button state will be read from memory (assuming .strobe is False)"""
 
-        self.__strobe = False
+        self._strobe = False
         """Set via write to controller port 0 (depending on if bit0 is 0 or 1).
         Also sets strobe value of controller 1 when set.
         If set, reads return the state of the first button (A).
@@ -62,11 +62,11 @@ class Controller(ControllerBase):
 
     def on_read(self) -> int:
         # If strobe is set, internal shift register is being reset so we just get back A
-        if self.__strobe:
+        if self._strobe:
             return self.__buttons[0]
         # Otherwise we return back the button indicated by the internal register and increment it
-        button = self.__buttons[self.__cursor]
-        self.__cursor = min(self.__cursor + 1, len(self.__buttons) - 1)
+        button = self.__buttons[self._cursor]
+        self._cursor = min(self._cursor + 1, len(self.__buttons) - 1)
         return button
 
     def on_write(self, value: int) -> None:
@@ -77,12 +77,12 @@ class Controller(ControllerBase):
         strobe = value & 1
         if strobe:
             # Reset both controllers' button indices
-            self.__cursor = 0
-            self.other.__cursor = 0
+            self._cursor = 0
+            self.other._cursor = 0
 
         # Set strobe state on both controllers
-        self.__strobe = strobe
-        self.other.__strobe = strobe
+        self._strobe = strobe
+        self.other._strobe = strobe
 
     # Direct button manipulation
     # (used for tests but probably useful for handling inputs from a frontend later too)
@@ -100,11 +100,11 @@ class Controller(ControllerBase):
         # not sure we want buttons here
         return {
             # "buttons": self.__buttons[0:8],
-            "cursor": self.__cursor,
-            "strobe": int(self.__strobe),
+            "cursor": self._cursor,
+            "strobe": int(self._strobe),
         }
 
     def set_save_state(self, state: Dict[str, Any]) -> None:
         # elf.__buttons[0:8] = state["buttons"]
-        self.__cursor = state["cursor"]
-        self.__strobe = bool(state["strobe"])
+        self._cursor = state["cursor"]
+        self._strobe = bool(state["strobe"])
