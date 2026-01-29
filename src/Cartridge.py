@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import binascii
 from collections.abc import Collection
 from enum import IntEnum, auto, unique
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import util.byte as byte
 from util.console_types import ConsoleType
@@ -99,3 +100,11 @@ class Cartridge:
 
     def is_valid(self) -> bool:
         return self.header.is_valid()
+
+    def checksum(self) -> int:
+        return binascii.crc32(self.__data)
+
+    def get_save_state(self) -> Dict[str, Any]:
+        return {
+            "checksum": self.checksum(),
+        }

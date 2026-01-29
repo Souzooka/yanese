@@ -175,3 +175,26 @@ class TestCartridge:
         assert header.extended_console_type is None
         assert header.misc_roms_present is None
         assert header.default_expansion_device is None
+
+    def test_save_state(self):
+        # Unlike most components, Cartridge shouldn't be modified upon loading savestate
+        # Instead, the cartridge state should just be used to help verify that
+        # a correct savestate is being used
+
+        data = bytes(list(TestCartridge.MAGIC) + list(range(0, 256)))
+        cartridge = Cartridge(data)
+
+        # Should actually have the savestate function
+        assert hasattr(cartridge, "get_save_state")
+        assert callable(cartridge.get_save_state)
+
+        # No set_save_state (don't call this one accidentally)
+        assert not hasattr(cartridge, "set_save_state")
+
+        # And return a dictionary with a checksum key
+        state = cartridge.get_save_state()
+        assert "checksum" in state
+
+        # Actual checksum value is an implementation detail and may/may not change
+        # It should, of course, match the value provided by the Cartridge.checksum function
+        assert state["checksum"] == cartridge.checksum()
