@@ -193,18 +193,21 @@ class TestCartridge:
 
         # trainer check
         trainer = cartridge.trainer()
+        assert type(trainer) is bytes
         assert len(trainer) == len(_trainer)
         assert trainer[0] == _trainer[0]
         assert trainer[-1] == _trainer[-1]
 
         # prg check
         prg = cartridge.prg()
+        assert type(prg) is bytes
         assert len(prg) == len(_prg)
         assert prg[0] == _prg[0]
         assert prg[-1] == _prg[-1]
 
         # chr check
         chr = cartridge.chr()
+        assert type(chr) is bytes
         assert len(chr) == len(_chr)
         assert chr[0] == _chr[0]
         assert chr[-1] == _chr[-1]

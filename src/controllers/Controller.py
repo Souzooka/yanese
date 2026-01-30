@@ -70,9 +70,8 @@ class Controller(ControllerBase):
         return button
 
     def on_write(self, value: int) -> None:
-        # Writing to $4017 (port 1) should do nothing in this case, afaik
         if self.__id == 1:
-            return
+            raise RuntimeError("Controller 1 should never be written to! ($4017 write is APU Frame Counter)")
 
         strobe = value & 1
         if strobe:
