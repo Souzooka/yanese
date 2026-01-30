@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+import util.byte as byte
+
 if TYPE_CHECKING:
     from src.controllers.ControllerBase import ControllerBase
 
@@ -33,7 +35,7 @@ class CPUMemory:
         self.__controllers = controllers
         self.__mapper = mapper
 
-    def on_read(self, address: int) -> Optional[int]:
+    def read(self, address: int) -> Optional[int]:
         if 0x0000 <= address <= 0x1FFF:
             # $0000-$0800 is WRAM; every 0x800 bytes following up to $1FFF
             # is mirrored/repeated.
@@ -68,9 +70,12 @@ class CPUMemory:
         # something has gone seriously wrong
         return 0
 
-    def on_write(self, address: int, value: int) -> None:
+    def read16(self, address: int) -> int:
+        return self.read(address) | (self.read(address + 1) << 8)
+
+    def write(self, address: int, value: int) -> None:
         if 0x0000 <= address <= 0x1FFF:
-            # $0000-$0800 is WRAM; every 0x800 bytes following up to $1FFF
+            # $0000-$07FF is WRAM; every 0x800 bytes following up to $1FFF
             # is mirrored/repeated.
             address &= 0x7FF
             self.__wram[address] = value
@@ -93,6 +98,12 @@ class CPUMemory:
         # If we get down here (after mapping everything)
         # something has gone seriously wrong
         return
+
+    def write16(self, address: int, value: int) -> None:
+        lo = value & 0xFF
+        hi = (value >> 8) & 0xFF
+        self.write(address, lo)
+        self.write(address + 1, hi)
 
     def get_save_state(self) -> Dict[Any, str]:
         return {
