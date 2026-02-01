@@ -19,8 +19,15 @@ class CPU:
         self.x = Register8Bit()
         self.y = Register8Bit()
         self.pc = Register16Bit()
-        self.sp = Register16Bit()
+        self.sp = Register8Bit()
 
         # Status Register
         # https://www.nesdev.org/wiki/Status_flags
         self.flags = FlagsRegister()
+
+        # Cycle counting
+        self.cycles = 0
+        # "Extra" cycles which occur due to some sort of irregular behavior
+        # from an operation (such as indirect accessing accessing an address across
+        # a page boundary); applied at the end of the execution of an operation.
+        self.extra_cycles = 0
