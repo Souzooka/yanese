@@ -77,10 +77,22 @@ class FlagsRegister:
         self.v = bool(value & (1 << 6))
         self.n = bool(value & (1 << 7))
 
+    def update_zero(self, value: int) -> None:
+        """
+        Updates the zero flag of the status register based on the provided value.
+        """
+        self.z = value == 0
+
+    def update_negative(self, value: int) -> None:
+        """
+        Updates the negative flag of the status register based on the provided value.
+        """
+        self.n = bool(value & (1 << 7))
+
     def update_zero_and_negative(self, value: int) -> None:
         """
         Updates the zero and negative flags of the status register based on the provided value.
         (e.g. LDA sets zero and negative based on loaded value)
         """
-        self.z = value == 0
-        self.n = bool(value & (1 << 7))
+        self.update_zero(value)
+        self.update_negative(value)

@@ -340,3 +340,202 @@ class TestOperationsOfficial:
         assert cpu.memory.read(0x320) == 0x00
         assert cpu.flags.z is False
         assert cpu.flags.n is False
+
+    def test_tax_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#TAX
+        # Test that the operation entries conform to what is listed on NES DEV
+        # https://www.youtube.com/watch?v=gMdcE8jdz70
+
+        assert operations[0xAA] is not None
+
+        operation = operations[0xAA]
+        compare_params(operation, Interpreter.tax, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_tax(self):
+        # Should transfer A to X (and set appropriate flags based on transferred value)
+
+        cpu = new_cpu()
+        cpu.a.set_value(1)
+        Interpreter.tax(Instruction(cpu))
+        assert cpu.x.get_value() == 1
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0)
+        Interpreter.tax(Instruction(cpu))
+        assert cpu.x.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0xFF)
+        Interpreter.tax(Instruction(cpu))
+        assert cpu.x.get_value() == 0xFF
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_tay_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#TAY
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xA8] is not None
+
+        operation = operations[0xA8]
+        compare_params(operation, Interpreter.tay, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_tay(self):
+        # Should transfer A to Y (and set appropriate flags based on transferred value)
+
+        cpu = new_cpu()
+        cpu.a.set_value(1)
+        Interpreter.tay(Instruction(cpu))
+        assert cpu.y.get_value() == 1
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0)
+        Interpreter.tay(Instruction(cpu))
+        assert cpu.y.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0xFF)
+        Interpreter.tay(Instruction(cpu))
+        assert cpu.y.get_value() == 0xFF
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_tsx_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#TSX
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xBA] is not None
+
+        operation = operations[0xBA]
+        compare_params(operation, Interpreter.tsx, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_tsx(self):
+        # Should transfer SP to X (and set appropriate flags based on transferred value)
+
+        cpu = new_cpu()
+        cpu.sp.set_value(1)
+        Interpreter.tsx(Instruction(cpu))
+        assert cpu.x.get_value() == 1
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.sp.set_value(0)
+        Interpreter.tsx(Instruction(cpu))
+        assert cpu.x.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.sp.set_value(0xFF)
+        Interpreter.tsx(Instruction(cpu))
+        assert cpu.x.get_value() == 0xFF
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_txa_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#TXA
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x8A] is not None
+
+        operation = operations[0x8A]
+        compare_params(operation, Interpreter.txa, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_txa(self):
+        # Should transfer X to A (and set appropriate flags based on transferred value)
+
+        cpu = new_cpu()
+        cpu.x.set_value(1)
+        Interpreter.txa(Instruction(cpu))
+        assert cpu.a.get_value() == 1
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.x.set_value(0)
+        Interpreter.txa(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.x.set_value(0xFF)
+        Interpreter.txa(Instruction(cpu))
+        assert cpu.a.get_value() == 0xFF
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_txs_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#TXS
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x9A] is not None
+
+        operation = operations[0x9A]
+        compare_params(operation, Interpreter.txs, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_txs(self):
+        # Should transfer X to SP (TXS also does NOT set status flags)
+
+        cpu = new_cpu()
+        cpu.x.set_value(1)
+        Interpreter.txs(Instruction(cpu))
+        assert cpu.sp.get_value() == 1
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.x.set_value(0)
+        Interpreter.txs(Instruction(cpu))
+        assert cpu.sp.get_value() == 0
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.x.set_value(0xFF)
+        Interpreter.txs(Instruction(cpu))
+        assert cpu.sp.get_value() == 0xFF
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+    def test_tya_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#TYA
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x98] is not None
+
+        operation = operations[0x98]
+        compare_params(operation, Interpreter.tya, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_tya(self):
+        # Should transfer Y to A (and set appropriate flags based on transferred value)
+
+        cpu = new_cpu()
+        cpu.y.set_value(1)
+        Interpreter.tya(Instruction(cpu))
+        assert cpu.a.get_value() == 1
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.y.set_value(0)
+        Interpreter.tya(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.y.set_value(0xFF)
+        Interpreter.tya(Instruction(cpu))
+        assert cpu.a.get_value() == 0xFF
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True

@@ -146,6 +146,72 @@ class Interpreter:
         # Store Y into memory
         cpu.memory.write(address, cpu.y.get_value())
 
+    @staticmethod
+    def tax(instr: Instruction) -> None:
+        """
+        TAX - Transfer A to X
+        TAX copies the accumulator value to the X register.
+        """
+        cpu = instr.cpu
+        value = cpu.a.get_value()
+        cpu.x.set_value(value)
+        cpu.flags.update_zero_and_negative(value)
+
+    @staticmethod
+    def tay(instr: Instruction) -> None:
+        """
+        TAX - Transfer A to Y
+        TAX copies the accumulator value to the Y register.
+        """
+        cpu = instr.cpu
+        value = cpu.a.get_value()
+        cpu.y.set_value(value)
+        cpu.flags.update_zero_and_negative(value)
+
+    @staticmethod
+    def tsx(instr: Instruction) -> None:
+        """
+        TSX - Transfer Stack Pointer to X
+        TSX copies the stack pointer value to the X register.
+        """
+        cpu = instr.cpu
+        value = cpu.sp.get_value()
+        cpu.x.set_value(value)
+        cpu.flags.update_zero_and_negative(value)
+
+    @staticmethod
+    def txa(instr: Instruction) -> None:
+        """
+        TXA - Transfer X to A
+        TXA copies the X register value to the accumulator.
+        """
+        cpu = instr.cpu
+        value = cpu.x.get_value()
+        cpu.a.set_value(value)
+        cpu.flags.update_zero_and_negative(value)
+
+    @staticmethod
+    def txs(instr: Instruction) -> None:
+        """
+        TXS - Transfer X to Stack Pointer
+        TXS copies the X register value to the stack pointer.
+        """
+        cpu = instr.cpu
+        value = cpu.x.get_value()
+        cpu.sp.set_value(value)
+        # TXS seemingly doesn't update flags.
+
+    @staticmethod
+    def tya(instr: Instruction) -> None:
+        """
+        TYA - Transfer Y to A
+        TYA copies the Y register value to the accumulator.
+        """
+        cpu = instr.cpu
+        value = cpu.y.get_value()
+        cpu.a.set_value(value)
+        cpu.flags.update_zero_and_negative(value)
+
 
 class Operation:
     __slots__ = ["interpreter_function", "cycles", "addressing_mode", "page_cross_penalty", "argument_type"]
@@ -174,6 +240,12 @@ _arguments = {
     Interpreter.sta: ArgumentType.ADDRESS,
     Interpreter.stx: ArgumentType.ADDRESS,
     Interpreter.sty: ArgumentType.ADDRESS,
+    Interpreter.tax: ArgumentType.NONE,
+    Interpreter.tay: ArgumentType.NONE,
+    Interpreter.tsx: ArgumentType.NONE,
+    Interpreter.txa: ArgumentType.NONE,
+    Interpreter.txs: ArgumentType.NONE,
+    Interpreter.tya: ArgumentType.NONE,
 }
 
 # fmt: off
@@ -336,7 +408,12 @@ __operations: Dict[int, Operation] = {
     # $87
     # $88
     # $89
-    # $8A
+    # $8A - TXA Implied
+    0x8A: Operation(
+        Interpreter.txa,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $8B
     # $8C - STY Absolute
     0x8C: Operation(
@@ -385,14 +462,24 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_Y
     ),
     # $97
-    # $98
+    # $98 - TYA Implied
+    0x98: Operation(
+        Interpreter.tya,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $99 - STA Absolute,Y
     0x99: Operation(
         Interpreter.sta,
         cycles=5,
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y
     ),
-    # $9A
+    # $9A - TXS Implied
+    0x9A: Operation(
+        Interpreter.txs,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $9B
     # $9C
     # $9D - STA Absolute,X
@@ -441,14 +528,24 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ZERO_PAGE
     ),
     # $A7
-    # $A8
+    # $A8 - TAY Implied
+    0xA8: Operation(
+        Interpreter.tay,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $A9 - LDA #Immediate
     0xA9: Operation(
         Interpreter.lda,
         cycles=2,
         addressing_mode=AddressingMode.IMMEDIATE
     ),
-    # $AA
+    # $AA - TAX Implied
+    0xAA: Operation(
+        Interpreter.tax,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $AB
     # $AC - LDY Absolute
     0xAC: Operation(
@@ -506,7 +603,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
         page_cross_penalty=True
     ),
-    # $BA
+    # $BA - TSX Implied
+    0xBA: Operation(
+        Interpreter.tsx,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $BB
     # $BC - LDY Absolute,X
     0xBC: Operation(

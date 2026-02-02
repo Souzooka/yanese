@@ -227,6 +227,27 @@ class TestRegisters:
         assert register2.v is False
         assert register2.n is True
 
+        # Calling update_zero
+        # Should set zero flag if value is 0, else clear
+        register = FlagsRegister()
+
+        register.update_zero(0)
+        assert register.z is True
+        for i in range(1, 0x100):
+            register.update_zero(i)
+            assert register.z is False
+
+        # Calling update_negative
+        # Should set negative flag if value's bit7 is set, else clear
+        register = FlagsRegister()
+
+        for i in range(0, 0x80):
+            register.update_negative(i)
+            assert register.n is False
+        for i in range(0x80, 0x100):
+            register.update_negative(i)
+            assert register.n is True
+
         # Calling update_zero_and_negative
         # Should set zero flag if value is 0, else clear
         # Should set negative flag if value's bit7 is set, else clear
