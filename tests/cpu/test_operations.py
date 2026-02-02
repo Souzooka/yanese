@@ -71,6 +71,19 @@ class TestOperationsOfficial:
         cpu = new_cpu()
         Interpreter.lda(Instruction(cpu, 0x77))
         assert cpu.a.get_value() == 0x77
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        # Sets z,n status flags
+        Interpreter.lda(Instruction(cpu, 0x00))
+        assert cpu.a.get_value() == 0x00
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        Interpreter.lda(Instruction(cpu, 0x80))
+        assert cpu.a.get_value() == 0x80
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
 
     def test_ldx_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#LDX
@@ -107,6 +120,19 @@ class TestOperationsOfficial:
         cpu = new_cpu()
         Interpreter.ldx(Instruction(cpu, 0x77))
         assert cpu.x.get_value() == 0x77
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        # Sets z,n status flags
+        Interpreter.ldx(Instruction(cpu, 0x00))
+        assert cpu.x.get_value() == 0x00
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        Interpreter.ldx(Instruction(cpu, 0x80))
+        assert cpu.x.get_value() == 0x80
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
 
     def test_ldy_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#LDY
@@ -143,3 +169,16 @@ class TestOperationsOfficial:
         cpu = new_cpu()
         Interpreter.ldy(Instruction(cpu, 0x77))
         assert cpu.y.get_value() == 0x77
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        # Sets z,n status flags
+        Interpreter.ldy(Instruction(cpu, 0x00))
+        assert cpu.y.get_value() == 0x00
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        Interpreter.ldy(Instruction(cpu, 0x80))
+        assert cpu.y.get_value() == 0x80
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
