@@ -7,8 +7,8 @@ from src.cpu.operations import ArgumentType, Interpreter, Operation, operations
 from src.CPUMemory import CPUMemory
 
 
-def new_cpu():
-    return CPU(CPUMemory())
+def new_cpu(_class=CPU):
+    return _class(CPUMemory())
 
 
 def compare_params(operation: Operation, fn, cycles, addressing_mode, page_cross_penalty, argument_type):
@@ -182,6 +182,33 @@ class TestOperationsOfficial:
         assert cpu.y.get_value() == 0x80
         assert cpu.flags.z is False
         assert cpu.flags.n is True
+
+    def test_nop_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#NOP
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xEA] is not None
+
+        operation = operations[0xEA]
+        compare_params(operation, Interpreter.nop, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_nop(self):
+        # Should run and not do anything.
+        # You better not be changing state when I'm not looking.
+        class CPUWrapper(CPU):
+            def __init__(self, memory):
+                self._init = False
+                super().__init__(memory)
+                self._init = True
+            def __getattribute__(self, name):
+                if name != "_init" and self._init: assert False, "NOP is affecting CPU state"
+                return object.__getattribute__(self, name)
+            def __setattr__(self, name, value):
+                if name != "_init" and self._init: assert False, "NOP is affecting CPU state"
+                return object.__setattr__(self, name, value)
+
+        cpu = new_cpu(CPUWrapper)
+        Interpreter.nop(Instruction(cpu, 0))
 
     def test_sta_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#STA

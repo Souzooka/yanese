@@ -102,6 +102,15 @@ class Interpreter:
         cpu.flags.update_zero_and_negative(value)
 
     @staticmethod
+    def nop(instr: Instruction) -> None:
+        """
+        NOP - No Operation
+        NOP - Just burns 2 cycles on the CPU.
+              No action necessary here.
+        """
+        pass
+
+    @staticmethod
     def sta(instr: Instruction) -> None:
         """
         STA - Store A
@@ -161,6 +170,7 @@ _arguments = {
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
     Interpreter.ldy: ArgumentType.VALUE,
+    Interpreter.nop: ArgumentType.NONE,
     Interpreter.sta: ArgumentType.ADDRESS,
     Interpreter.stx: ArgumentType.ADDRESS,
     Interpreter.sty: ArgumentType.ADDRESS,
@@ -563,6 +573,11 @@ __operations: Dict[int, Operation] = {
     # $E8
     # $E9
     # $EA
+    0xEA: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $EB
     # $EC
     # $ED
