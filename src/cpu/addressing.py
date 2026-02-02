@@ -219,7 +219,7 @@ class _AddressingModes:
 
 
 class AddressingMode:
-    __slots__ = ["input_size", "get_address", "get_value", "page_cross_penalty"]
+    __slots__ = ["input_size", "get_address", "get_value"]
 
     IMPLICIT = 0
     IMMEDIATE = 1
