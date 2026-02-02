@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List
 from src.cpu.addressing import AddressingMode
 
 if TYPE_CHECKING:
+    from src.cpu.CPU import CPU
     from src.cpu.Instruction import Instruction
 
 """
@@ -23,6 +24,34 @@ class ArgumentType(IntEnum):
 
 
 class Interpreter:
+    @staticmethod
+    def pre_operation(cpu: CPU) -> None:
+        pass
+
+    @staticmethod
+    def post_operation(cpu: CPU) -> None:
+        Interpreter._handle_delayed_interrupt(cpu)
+
+    @staticmethod
+    def _handle_delayed_interrupt(cpu: CPU) -> None:
+        if cpu.delayed_interrupt_flag is not None:
+            cycles, flag = cpu.delayed_interrupt_flag
+            if cycles > 0:
+                cpu.delayed_interrupt_flag = (cycles - 1, flag)
+            else:
+                cpu.flags.i = flag
+                cpu.delayed_interrupt_flag = None
+
+    @staticmethod
+    def _rmw(cpu: CPU, address: int) -> int:
+        """
+        Imitates read-modify-write behavior, where the original value is written back to
+        the address before the modified value.
+        """
+        value = cpu.memory.read(address)
+        cpu.memory.write(address, value)
+        return value
+
     @staticmethod
     def brk(instr: Instruction) -> None:
         pass
@@ -72,6 +101,42 @@ class Interpreter:
         # Update flags of status register
         cpu.flags.update_zero_and_negative(value)
 
+    @staticmethod
+    def sta(instr: Instruction) -> None:
+        """
+        STA - Store A
+        STA stores the accumulator value into memory.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+
+        # Store A into memory
+        cpu.memory.write(address, cpu.a.get_value())
+
+    @staticmethod
+    def stx(instr: Instruction) -> None:
+        """
+        STX - Store X
+        STX stores the X register value into memory.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+
+        # Store X into memory
+        cpu.memory.write(address, cpu.x.get_value())
+
+    @staticmethod
+    def sty(instr: Instruction) -> None:
+        """
+        STY - Store Y
+        STY stores the Y register value into memory.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+
+        # Store Y into memory
+        cpu.memory.write(address, cpu.y.get_value())
+
 
 class Operation:
     __slots__ = ["interpreter_function", "cycles", "addressing_mode", "page_cross_penalty", "argument_type"]
@@ -96,6 +161,9 @@ _arguments = {
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
     Interpreter.ldy: ArgumentType.VALUE,
+    Interpreter.sta: ArgumentType.ADDRESS,
+    Interpreter.stx: ArgumentType.ADDRESS,
+    Interpreter.sty: ArgumentType.ADDRESS,
 }
 
 # fmt: off
@@ -229,35 +297,100 @@ __operations: Dict[int, Operation] = {
     # $7E
     # $7F
     # $80
-    # $81
+    # $81 - STA (Indirect,X)
+    0x81: Operation(
+        Interpreter.sta,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_INDIRECT
+    ),
     # $82
     # $83
-    # $84
-    # $85
-    # $86
+    # $84 - STY Zero Page
+    0x84: Operation(
+        Interpreter.sty,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
+    # $85 - STA Zero Page
+    0x85: Operation(
+        Interpreter.sta,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
+    # $86 - STX Zero Page
+    0x86: Operation(
+        Interpreter.stx,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $87
     # $88
     # $89
     # $8A
     # $8B
-    # $8C
-    # $8D
+    # $8C - STY Absolute
+    0x8C: Operation(
+        Interpreter.sty,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
+    # $8D - STA Absolute
+    0x8D: Operation(
+        Interpreter.sta,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $8E
+    0x8E: Operation(
+        Interpreter.stx,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $8F
     # $90
-    # $91
+    # $91 - STA (Indirect),Y
+    0x91: Operation(
+        Interpreter.sta,
+        cycles=6,
+        addressing_mode=AddressingMode.INDIRECT_INDEXED
+    ),
     # $92
     # $93
-    # $94
-    # $95
-    # $96
+    # $94 - STY Zero Page,X
+    0x94: Operation(
+        Interpreter.sty,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
+    # $95 - STA Zero Page,X
+    0x95: Operation(
+        Interpreter.sta,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
+    # $96 - STX Zero Page,Y
+    0x96: Operation(
+        Interpreter.stx,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_Y
+    ),
     # $97
     # $98
-    # $99
+    # $99 - STA Absolute,Y
+    0x99: Operation(
+        Interpreter.sta,
+        cycles=5,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y
+    ),
     # $9A
     # $9B
     # $9C
-    # $9D
+    # $9D - STA Absolute,X
+    0x9D: Operation(
+        Interpreter.sta,
+        cycles=5,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
+    ),
     # $9E
     # $9F
     # $A0 - LDY #Immediate

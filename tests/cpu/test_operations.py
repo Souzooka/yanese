@@ -182,3 +182,134 @@ class TestOperationsOfficial:
         assert cpu.y.get_value() == 0x80
         assert cpu.flags.z is False
         assert cpu.flags.n is True
+
+    def test_sta_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#STA
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x85] is not None
+        assert operations[0x95] is not None
+        assert operations[0x8D] is not None
+        assert operations[0x9D] is not None
+        assert operations[0x99] is not None
+        assert operations[0x81] is not None
+        assert operations[0x91] is not None
+
+        # Zero Page
+        operation = operations[0x85]
+        compare_params(operation, Interpreter.sta, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        # Zero Page,X
+        operation = operations[0x95]
+        compare_params(operation, Interpreter.sta, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
+
+        # Absolute
+        operation = operations[0x8D]
+        compare_params(operation, Interpreter.sta, 4, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+        # Absolute,X
+        operation = operations[0x9D]
+        compare_params(operation, Interpreter.sta, 5, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
+
+        # Absolute,Y
+        operation = operations[0x99]
+        compare_params(operation, Interpreter.sta, 5, AddressingMode.INDEXED_ABSOLUTE_Y, False, ArgumentType.ADDRESS)
+
+        # (Indirect,X)
+        operation = operations[0x81]
+        compare_params(operation, Interpreter.sta, 6, AddressingMode.INDEXED_INDIRECT, False, ArgumentType.ADDRESS)
+
+        # (Indirect),Y
+        operation = operations[0x91]
+        compare_params(operation, Interpreter.sta, 6, AddressingMode.INDIRECT_INDEXED, False, ArgumentType.ADDRESS)
+
+    def test_sta(self):
+        # Should store the value of A to memory
+        # (and doesn't affect status flags)
+        cpu = new_cpu()
+
+        cpu.a.set_value(0x80)
+        Interpreter.sta(Instruction(cpu, 0x320))
+        assert cpu.memory.read(0x320) == 0x80
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0x00)
+        Interpreter.sta(Instruction(cpu, 0x320))
+        assert cpu.memory.read(0x320) == 0x00
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+    def test_stx_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#STX
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x86] is not None
+        assert operations[0x96] is not None
+        assert operations[0x8E] is not None
+
+        # Zero Page
+        operation = operations[0x86]
+        compare_params(operation, Interpreter.stx, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        # Zero Page,Y
+        operation = operations[0x96]
+        compare_params(operation, Interpreter.stx, 4, AddressingMode.INDEXED_ZERO_PAGE_Y, False, ArgumentType.ADDRESS)
+
+        # Absolute
+        operation = operations[0x8E]
+        compare_params(operation, Interpreter.stx, 4, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+    def test_stx(self):
+        # Should store the value of X to memory
+        # (and doesn't affect status flags)
+        cpu = new_cpu()
+
+        cpu.x.set_value(0x80)
+        Interpreter.stx(Instruction(cpu, 0x320))
+        assert cpu.memory.read(0x320) == 0x80
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.x.set_value(0x00)
+        Interpreter.stx(Instruction(cpu, 0x320))
+        assert cpu.memory.read(0x320) == 0x00
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+    def test_sty_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#STY
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x84] is not None
+        assert operations[0x94] is not None
+        assert operations[0x8C] is not None
+
+        # Zero Page
+        operation = operations[0x84]
+        compare_params(operation, Interpreter.sty, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        # Zero Page,X
+        operation = operations[0x94]
+        compare_params(operation, Interpreter.sty, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
+
+        # Absolute
+        operation = operations[0x8C]
+        compare_params(operation, Interpreter.sty, 4, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+    def test_sty(self):
+        # Should store the value of Y to memory
+        # (and doesn't affect status flags)
+        cpu = new_cpu()
+
+        cpu.y.set_value(0x80)
+        Interpreter.sty(Instruction(cpu, 0x320))
+        assert cpu.memory.read(0x320) == 0x80
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.y.set_value(0x00)
+        Interpreter.sty(Instruction(cpu, 0x320))
+        assert cpu.memory.read(0x320) == 0x00
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False

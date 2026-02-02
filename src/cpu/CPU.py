@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from src.cpu.registers import FlagsRegister, Register8Bit, Register16Bit
 
@@ -31,3 +31,10 @@ class CPU:
         # from an operation (such as indirect accessing accessing an address across
         # a page boundary); applied at the end of the execution of an operation.
         self.extra_cycles = 0
+
+        # TODO: Test coverage
+        # CLI/SEI/PLP delay
+        # Interpreter handles delayed changing interrupt flag via Interpreter.post_operation
+        # CLI/SEI/PLP should also flush this to the interrupt flag as well before overwriting it.
+        # (delayed_cycles, flag)
+        self.delayed_interrupt_flag: Optional[Tuple[int, bool]] = None
