@@ -156,3 +156,23 @@ class TestOpenBus:
         # read16 should also read the high byte last for proper open bus implementation
         address = memory.read16(4)
         assert memory.read(address) == 0x73
+
+    def test_controllers(self):
+        # Controller reads mask in bits 5..7 of the open bus value, since
+        # only bits 0..4 are populated in the data bus.
+        # This usually means that a read from a controller port
+        # actually returns 0x40 or 0x41, depending on if the button is active
+        controller0 = Controller(0)
+        controller1 = Controller(1)
+        controller0.on_load(controller1)
+        controller1.on_load(controller0)
+        memory = CPUMemory()
+        memory.on_load(controllers=[controller0, controller1])
+        for i in range(0, 8):
+            controller0.set_button(i, 1)
+
+        memory.write(4, 0x16)
+        memory.write(5, 0x40)
+
+        address = memory.read16(4)
+        assert memory.read(address) == 0x41

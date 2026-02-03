@@ -38,7 +38,7 @@ class CPUMemory:
         self.__mapper = mapper
 
     def read(self, address: int) -> int:
-        value = None
+        value = self.get_open_bus_value()
 
         if 0x0000 <= address <= 0x1FFF:
             # $0000-$0800 is WRAM; every 0x800 bytes following up to $1FFF
@@ -46,15 +46,17 @@ class CPUMemory:
             address &= 0x7FF
             value = self.__wram[address]
 
-        elif address == 0x4016:
+        elif address == 0x4016 or address == 0x4017:
             # $4016 = controller port 0
-            if self.__controllers is not None:
-                value = self.__controllers[0].on_read()
-
-        elif address == 0x4017:
             # $4017 = controller port 1
+            controller_value = 0
             if self.__controllers is not None:
-                value = self.__controllers[1].on_read()
+                controller_value = self.__controllers[address - 0x4016].on_read()
+            # A controller read only affects bits 0-4,
+            # So we need to mask bits 5-7 of the open bus in
+            value &= 0b11100000
+            controller_value &= 0b00011111
+            value = value | controller_value
 
         elif 0x4020 <= address <= 0xFFFF:
             # $4020-$FFFF maps to the cartridge board, which can pretty much do whatever it wants
