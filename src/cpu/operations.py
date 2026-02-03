@@ -35,9 +35,9 @@ class Interpreter:
     @staticmethod
     def _handle_delayed_interrupt(cpu: CPU) -> None:
         if cpu.delayed_interrupt_flag is not None:
-            cycles, flag = cpu.delayed_interrupt_flag
-            if cycles > 0:
-                cpu.delayed_interrupt_flag = (cycles - 1, flag)
+            instructions, flag = cpu.delayed_interrupt_flag
+            if instructions > 0:
+                cpu.delayed_interrupt_flag = (instructions - 1, flag)
             else:
                 cpu.flags.i = flag
                 cpu.delayed_interrupt_flag = None
@@ -55,6 +55,30 @@ class Interpreter:
     @staticmethod
     def brk(instr: Instruction) -> None:
         pass
+
+    @staticmethod
+    def clc(instr: Instruction) -> None:
+        """
+        CLC - Clear Carry
+        CLC clears the carry flag.
+        """
+        instr.cpu.flags.c = False
+
+    @staticmethod
+    def cld(instr: Instruction) -> None:
+        """
+        CLD - Clear Decimal
+        CLD clears the decimal flag.
+        """
+        instr.cpu.flags.d = False
+
+    @staticmethod
+    def clv(instr: Instruction) -> None:
+        """
+        CLV - Clear Overflow
+        CLV clears the overflow flag.
+        """
+        instr.cpu.flags.v = False
 
     @staticmethod
     def lda(instr: Instruction) -> None:
@@ -109,6 +133,22 @@ class Interpreter:
               No action necessary here.
         """
         pass
+
+    @staticmethod
+    def sec(instr: Instruction) -> None:
+        """
+        SEC - Set Carry
+        SEC sets the carry flag.
+        """
+        instr.cpu.flags.c = True
+
+    @staticmethod
+    def sed(instr: Instruction) -> None:
+        """
+        SED - Set Decimal
+        SED sets the decimal flag.
+        """
+        instr.cpu.flags.d = True
 
     @staticmethod
     def sta(instr: Instruction) -> None:
@@ -233,10 +273,15 @@ class Operation:
 # All individual instruction types should accept the same argument type,
 # regardless of addressing mode
 _arguments = {
+    Interpreter.clc: ArgumentType.NONE,
+    Interpreter.cld: ArgumentType.NONE,
+    Interpreter.clv: ArgumentType.NONE,
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
     Interpreter.ldy: ArgumentType.VALUE,
     Interpreter.nop: ArgumentType.NONE,
+    Interpreter.sec: ArgumentType.NONE,
+    Interpreter.sed: ArgumentType.NONE,
     Interpreter.sta: ArgumentType.ADDRESS,
     Interpreter.stx: ArgumentType.ADDRESS,
     Interpreter.sty: ArgumentType.ADDRESS,
@@ -274,7 +319,12 @@ __operations: Dict[int, Operation] = {
     # $15
     # $16
     # $17
-    # $18
+    # $18 - CLC Implied
+    0x18: Operation(
+        Interpreter.clc,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $19
     # $1A
     # $1B
@@ -306,7 +356,12 @@ __operations: Dict[int, Operation] = {
     # $35
     # $36
     # $37
-    # $38
+    # $38 - SEC Implied
+    0x38: Operation(
+        Interpreter.sec,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $39
     # $3A
     # $3B
@@ -609,7 +664,12 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $BB
+    # $BB - CLV Implied
+    0xB8: Operation(
+        Interpreter.clv,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $BC - LDY Absolute,X
     0xBC: Operation(
         Interpreter.ldy,
@@ -656,7 +716,12 @@ __operations: Dict[int, Operation] = {
     # $D5
     # $D6
     # $D7
-    # $D8
+    # $D8 - CLD Implied
+    0xD8: Operation(
+        Interpreter.cld,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $D9
     # $DA
     # $DB
@@ -693,7 +758,12 @@ __operations: Dict[int, Operation] = {
     # $F5
     # $F6
     # $F7
-    # $F8
+    # $F8 - SED Implied
+    0xF8: Operation(
+        Interpreter.sed,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $F9
     # $FA
     # $FB

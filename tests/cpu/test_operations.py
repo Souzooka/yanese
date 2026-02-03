@@ -21,6 +21,54 @@ def compare_params(operation: Operation, fn, cycles, addressing_mode, page_cross
 
 # fmt: off
 class TestOperationsOfficial:
+    def test_clc_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#CLC
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x18] is not None
+
+        operation = operations[0x18]
+        compare_params(operation, Interpreter.clc, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_clc(self):
+        # Should clear the carry flag.
+        cpu = new_cpu()
+        cpu.flags.c = True
+        Interpreter.clc(Instruction(cpu))
+        assert cpu.flags.c is False
+
+    def test_cld_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#CLD
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xD8] is not None
+
+        operation = operations[0xD8]
+        compare_params(operation, Interpreter.cld, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_cld(self):
+        # Should clear the decimal flag.
+        cpu = new_cpu()
+        cpu.flags.d = True
+        Interpreter.cld(Instruction(cpu))
+        assert cpu.flags.d is False
+
+    def test_clv_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#CLV
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xB8] is not None
+
+        operation = operations[0xB8]
+        compare_params(operation, Interpreter.clv, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_clv(self):
+        # Should clear the overflow flag.
+        cpu = new_cpu()
+        cpu.flags.v = True
+        Interpreter.clv(Instruction(cpu))
+        assert cpu.flags.v is False
+
     def test_lda_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#LDA
         # Test that the operation entries conform to what is listed on NES DEV
@@ -209,6 +257,36 @@ class TestOperationsOfficial:
 
         cpu = new_cpu(CPUWrapper)
         Interpreter.nop(Instruction(cpu, 0))
+
+    def test_sec_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#SEC
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x38] is not None
+
+        operation = operations[0x38]
+        compare_params(operation, Interpreter.sec, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_sec(self):
+        # Should set the carry flag.
+        cpu = new_cpu()
+        Interpreter.sec(Instruction(cpu))
+        assert cpu.flags.c is True
+
+    def test_sed_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#SED
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xF8] is not None
+
+        operation = operations[0xF8]
+        compare_params(operation, Interpreter.sed, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_sed(self):
+        # Should set the decimal flag.
+        cpu = new_cpu()
+        Interpreter.sed(Instruction(cpu))
+        assert cpu.flags.d is True
 
     def test_sta_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#STA

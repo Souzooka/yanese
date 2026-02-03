@@ -36,5 +36,5 @@ class CPU:
         # CLI/SEI/PLP delay
         # Interpreter handles delayed changing interrupt flag via Interpreter.post_operation
         # CLI/SEI/PLP should also flush this to the interrupt flag as well before overwriting it.
-        # (delayed_cycles, flag)
+        # (delayed_instructions, flag)
         self.delayed_interrupt_flag: Optional[Tuple[int, bool]] = None
