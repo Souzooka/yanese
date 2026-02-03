@@ -125,5 +125,5 @@ class CPUMemory:
         }
 
     def set_save_state(self, state: Dict[Any, str]) -> None:
-        self.__wram = state["wram"]
-        self.__open_bus_value = state["open_bus"]
+        self.__wram = bytearray(state["wram"])
+        self.__open_bus_value = state["open_bus"] & 0xFF
