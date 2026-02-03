@@ -53,6 +53,54 @@ class TestOperationsOfficial:
         Interpreter.cld(Instruction(cpu))
         assert cpu.flags.d is False
 
+    def test_cli_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#CLI
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x58] is not None
+
+        operation = operations[0x58]
+        compare_params(operation, Interpreter.cli, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_cli(self):
+        # Should clear the interrupt disable flag.
+        # This effect is delayed by 1 instruction and is handled by calling
+        # Interpreter.pre_operation/Interpreter.post_operation around each instruction.
+        cpu = new_cpu()
+        cpu.flags.i = True
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.cli(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Interrupt Disable should still be set at this point
+        assert cpu.flags.i is True
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.nop(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Now Interrupt Disable should be clear.
+        assert cpu.flags.i is False
+
+        # CLI should also flush the delayed clear to the CPU when called, instead of clobbering the delayed change.
+        cpu = new_cpu()
+        cpu.flags.i = True
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.cli(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Interrupt Disable should still be set at this point
+        assert cpu.flags.i is True
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.cli(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Interrupt Disable should now be clear
+        assert cpu.flags.i is False
+
     def test_clv_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#CLV
         # Test that the operation entries conform to what is listed on NES DEV
@@ -287,6 +335,54 @@ class TestOperationsOfficial:
         cpu = new_cpu()
         Interpreter.sed(Instruction(cpu))
         assert cpu.flags.d is True
+
+    def test_sei_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#SEI
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x78] is not None
+
+        operation = operations[0x78]
+        compare_params(operation, Interpreter.sei, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_sei(self):
+        # Should set the interrupt disable flag.
+        # This effect is delayed by 1 instruction and is handled by calling
+        # Interpreter.pre_operation/Interpreter.post_operation around each instruction.
+        cpu = new_cpu()
+        cpu.flags.i = False
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.sei(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Interrupt Disable should still be clear at this point
+        assert cpu.flags.i is False
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.nop(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Now Interrupt Disable should be set.
+        assert cpu.flags.i is True
+
+        # SEI should also flush the delayed set to the CPU when called, instead of clobbering the delayed change.
+        cpu = new_cpu()
+        cpu.flags.i = False
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.sei(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Interrupt Disable should still be clear at this point
+        assert cpu.flags.i is False
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.sei(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+
+        # Interrupt Disable should now be set
+        assert cpu.flags.i is True
 
     def test_sta_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#STA

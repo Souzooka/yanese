@@ -73,6 +73,19 @@ class Interpreter:
         instr.cpu.flags.d = False
 
     @staticmethod
+    def cli(instr: Instruction) -> None:
+        """
+        CLI - Clear Interrupt Disable
+        CLI clears the interrupt disable flag.
+        This effect is delayed by 1 instruction.
+        """
+        cpu = instr.cpu
+        # Flush previous change on interrupt disable flag
+        Interpreter._handle_delayed_interrupt(cpu)
+        # Set up a delayed clear of the interrupt flag (after next instruction)
+        cpu.delayed_interrupt_flag = (1, False)
+
+    @staticmethod
     def clv(instr: Instruction) -> None:
         """
         CLV - Clear Overflow
@@ -149,6 +162,19 @@ class Interpreter:
         SED sets the decimal flag.
         """
         instr.cpu.flags.d = True
+
+    @staticmethod
+    def sei(instr: Instruction) -> None:
+        """
+        SEI - Set Interrupt Disable
+        SEI sets the interrupt disable flag.
+        This effect is delayed by 1 instruction.
+        """
+        cpu = instr.cpu
+        # Flush previous change on interrupt disable flag
+        Interpreter._handle_delayed_interrupt(cpu)
+        # Set up a delayed clear of the interrupt flag (after next instruction)
+        cpu.delayed_interrupt_flag = (1, True)
 
     @staticmethod
     def sta(instr: Instruction) -> None:
@@ -275,6 +301,7 @@ class Operation:
 _arguments = {
     Interpreter.clc: ArgumentType.NONE,
     Interpreter.cld: ArgumentType.NONE,
+    Interpreter.cli: ArgumentType.NONE,
     Interpreter.clv: ArgumentType.NONE,
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
@@ -282,6 +309,7 @@ _arguments = {
     Interpreter.nop: ArgumentType.NONE,
     Interpreter.sec: ArgumentType.NONE,
     Interpreter.sed: ArgumentType.NONE,
+    Interpreter.sei: ArgumentType.NONE,
     Interpreter.sta: ArgumentType.ADDRESS,
     Interpreter.stx: ArgumentType.ADDRESS,
     Interpreter.sty: ArgumentType.ADDRESS,
@@ -393,7 +421,12 @@ __operations: Dict[int, Operation] = {
     # $55
     # $56
     # $57
-    # $58
+    # $58 - CLI Implied
+    0x58: Operation(
+        Interpreter.cli,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $59
     # $5A
     # $5B
@@ -425,7 +458,12 @@ __operations: Dict[int, Operation] = {
     # $75
     # $76
     # $77
-    # $78
+    # $78 - SEI Implied
+    0x78: Operation(
+        Interpreter.sei,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $79
     # $7A
     # $7B
