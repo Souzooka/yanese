@@ -1,4 +1,5 @@
 from src.controllers.Controller import Controller
+from src.cpu.CPU import CPU
 from src.CPUMemory import CPUMemory
 
 
@@ -134,3 +135,24 @@ class TestCPUMemory:
 
         for i in range(0, 0x800):
             assert memory.read(i) == i & 0xFF
+
+
+class TestOpenBus:
+    def test_open_bus(self):
+        # Open bus is a phenomenon where a program reads from a non-mapped address.
+        # In this case, the value read from the bus is simply the last read value.
+        memory = CPUMemory()
+
+        # Simple test case from https://www.nesdev.org/wiki/Open_bus_behavior
+        # NOTE: This relies on the __mapper None check, which may change later.
+        memory.write(4, 0xFA)
+        memory.write(5, 0x73)
+
+        lo = memory.read(4)
+        hi = memory.read(5)
+        address = lo | (hi << 8)
+        assert memory.read(address) == 0x73
+
+        # read16 should also read the high byte last for proper open bus implementation
+        address = memory.read16(4)
+        assert memory.read(address) == 0x73

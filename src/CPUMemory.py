@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 if TYPE_CHECKING:
     from src.controllers.ControllerBase import ControllerBase
 
-ALLOW_OPEN_BUS = False
-
 
 class CPUMemory:
     """
     Handles the main system memory accessible by the CPU.
     https://www.nesdev.org/wiki/CPU_memory_map
     """
+
+    __slots__ = ["__ppu", "__apu", "__controllers", "__mapper", "__wram", "__open_bus_value"]
 
     __controllers: Optional[List[ControllerBase]]
 
@@ -27,46 +27,51 @@ class CPUMemory:
         # (or mirrors of such), and on-board ROM.
         self.__wram = bytearray(0x800)
 
+        # The last read value from the bus, returned upon read if attempting to read from
+        # a non-mapped address
+        self.__open_bus_value = 0
+
     def on_load(self, ppu=None, apu=None, controllers: Optional[List[ControllerBase]] = None, mapper=None):
         self.__ppu = ppu
         self.__apu = apu
         self.__controllers = controllers
         self.__mapper = mapper
 
-    def read(self, address: int) -> Optional[int]:
+    def read(self, address: int) -> int:
+        value = None
+
         if 0x0000 <= address <= 0x1FFF:
             # $0000-$0800 is WRAM; every 0x800 bytes following up to $1FFF
             # is mirrored/repeated.
             address &= 0x7FF
-            return self.__wram[address]
+            value = self.__wram[address]
 
-        if address == 0x4016:
+        elif address == 0x4016:
             # $4016 = controller port 0
             if self.__controllers is not None:
-                return self.__controllers[0].on_read()
+                value = self.__controllers[0].on_read()
 
-        if address == 0x4017:
+        elif address == 0x4017:
             # $4017 = controller port 1
             if self.__controllers is not None:
-                return self.__controllers[1].on_read()
+                value = self.__controllers[1].on_read()
 
-        if 0x4020 <= address <= 0xFFFF:
+        elif 0x4020 <= address <= 0xFFFF:
             # $4020-$FFFF maps to the cartridge board, which can pretty much do whatever it wants
             if self.__mapper is not None:
-                # We allow the mapper to return None if attempting to read
-                # unmapped addresses. This causes a behavior which a few games
-                # rely on (but we'll probably boldly ignore and pretend it doesn't exist)
-                # https://www.nesdev.org/wiki/Open_bus_behavior
+                # NOTE: The mapper's on_read function may return None if the program reads from an unmapped
+                # address; this is handled at the bottom of the function where we return the open bus value
+                # (which is just the last read value from the CPU bus)
                 value = self.__mapper.on_read(address)
-                if value is None:
-                    # probably want to log this somewhere when that's implemented
-                    if not ALLOW_OPEN_BUS:
-                        value = 0
-                return value
 
-        # If we get down here (after mapping everything)
-        # something has gone seriously wrong
-        return 0
+        # Test for open bus, i.e. we read from nowhere actually mapped.
+        # https://www.nesdev.org/wiki/Open_bus_behavior
+        if value is None:
+            # TODO: Probably want to log this behavior later.
+            value = self.get_open_bus_value()
+        else:
+            self.set_open_bus_value(value)
+        return value
 
     def read16(self, address: int) -> int:
         return self.read(address) | (self.read(address + 1) << 8)
@@ -102,6 +107,12 @@ class CPUMemory:
         hi = (value >> 8) & 0xFF
         self.write(address, lo)
         self.write(address + 1, hi)
+
+    def get_open_bus_value(self) -> int:
+        return self.__open_bus_value
+
+    def set_open_bus_value(self, value: int) -> None:
+        self.__open_bus_value = value
 
     def get_save_state(self) -> Dict[Any, str]:
         return {
