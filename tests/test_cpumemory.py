@@ -160,6 +160,11 @@ class TestCPUMemory:
         state["wram"][0] = [[[[[1]]]]]
         catch_type_error(memory, state)
 
+        # WRAM invalid length
+        state = memory.get_save_state()
+        state["wram"] = list(0 for i in range(len(state["wram"]) - 1))
+        catch_type_error(memory, state)
+
         # Open bus not an integer in range 0..FF
         state = memory.get_save_state()
         state["open_bus"] = 0.0

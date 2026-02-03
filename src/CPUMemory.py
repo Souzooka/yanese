@@ -131,6 +131,8 @@ class CPUMemory:
             return False, ""
         if not all(type(v) is int for v in wram):
             return False, ""
+        if len(wram) != len(self.__wram):
+            return False, ""
         if type(open_bus_value) is not int or open_bus_value != byte.to_u8(open_bus_value):
             return False, ""
         return True, ""
