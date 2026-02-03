@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+
+from src.util import byte
 
 if TYPE_CHECKING:
     from src.controllers.ControllerBase import ControllerBase
@@ -73,12 +75,14 @@ class CPUMemory:
             value = self.get_open_bus_value()
         else:
             self.set_open_bus_value(value)
-        return value
+        return byte.to_u8(value)
 
     def read16(self, address: int) -> int:
         return self.read(address) | (self.read(address + 1) << 8)
 
     def write(self, address: int, value: int) -> None:
+        value = byte.to_u8(value)
+
         if 0x0000 <= address <= 0x1FFF:
             # $0000-$07FF is WRAM; every 0x800 bytes following up to $1FFF
             # is mirrored/repeated.
@@ -116,6 +120,21 @@ class CPUMemory:
     def set_open_bus_value(self, value: int) -> None:
         self.__open_bus_value = value
 
+    def __invalid_save_state(self, msg: str = "") -> None:
+        raise TypeError("Invalid save state" + f": {msg}" if msg else "")
+
+    def __validate_save_state(self, state: Dict[Any, str]) -> Tuple[bool, str]:
+        wram = state["wram"]
+        open_bus_value = state["open_bus"]
+
+        if type(wram) is not list:
+            return False, ""
+        if not all(type(v) is int for v in wram):
+            return False, ""
+        if type(open_bus_value) is not int or open_bus_value != byte.to_u8(open_bus_value):
+            return False, ""
+        return True, ""
+
     def get_save_state(self) -> Dict[Any, str]:
         return {
             # Need to make sure to take a copy here, otherwise
@@ -125,5 +144,9 @@ class CPUMemory:
         }
 
     def set_save_state(self, state: Dict[Any, str]) -> None:
+        valid, msg = self.__validate_save_state(state)
+        if not valid:
+            self.__invalid_save_state(msg)
+
         self.__wram = bytearray(state["wram"])
-        self.__open_bus_value = state["open_bus"] & 0xFF
+        self.__open_bus_value = state["open_bus"]

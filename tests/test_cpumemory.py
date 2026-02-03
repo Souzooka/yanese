@@ -108,7 +108,7 @@ class TestCPUMemory:
         assert memory.read16(0) == 0x201
 
     def test_save_state(self):
-        # Should only need to preserve WRAM here
+        # Should preserve WRAM here
 
         # If a state is taken for a new instance of memory, all of WRAM should be 0
         # after restoring the state even after setting memory
@@ -135,6 +135,41 @@ class TestCPUMemory:
 
         for i in range(0, 0x800):
             assert memory.read(i) == i & 0xFF
+
+    def test_invalid_save_state(self):
+        # Should raise TypeError if the inputs in the savestate are malformed
+        memory = CPUMemory()
+
+        def catch_type_error(memory: CPUMemory, state):
+            try:
+                memory.set_save_state(state)
+                assert False, "CPUMemory accepted malformed savestate"
+            except TypeError:
+                pass
+
+        # WRAM not a list
+        state = memory.get_save_state()
+        state["wram"] = "hello world"
+        catch_type_error(memory, state)
+
+        # WRAM not a list of integers
+        state = memory.get_save_state()
+        state["wram"] = list(0.0 for i in range(len(state["wram"])))
+        catch_type_error(memory, state)
+        state = memory.get_save_state()
+        state["wram"][0] = [[[[[1]]]]]
+        catch_type_error(memory, state)
+
+        # Open bus not an integer in range 0..FF
+        state = memory.get_save_state()
+        state["open_bus"] = 0.0
+        catch_type_error(memory, state)
+        state["open_bus"] = "hi"
+        catch_type_error(memory, state)
+        state["open_bus"] = -1
+        catch_type_error(memory, state)
+        state["open_bus"] = 0x100
+        catch_type_error(memory, state)
 
 
 class TestOpenBus:
