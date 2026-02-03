@@ -176,3 +176,17 @@ class TestOpenBus:
 
         address = memory.read16(4)
         assert memory.read(address) == 0x41
+
+    def test_save_state(self):
+        # Should preserve the open bus state
+        memory = CPUMemory()
+        memory.write(4, 0xFA)
+        memory.write(5, 0x73)
+
+        lo = memory.read(4)
+        hi = memory.read(5)
+        address = lo | (hi << 8)
+        state = memory.get_save_state()
+        memory = CPUMemory()
+        memory.set_save_state(state)
+        assert memory.read(address) == 0x73

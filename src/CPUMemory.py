@@ -120,8 +120,10 @@ class CPUMemory:
         return {
             # Need to make sure to take a copy here, otherwise
             # future writes to CPUMemory will mutate this savestate
-            "wram": list(self.__wram)
+            "wram": list(self.__wram),
+            "open_bus": self.__open_bus_value,
         }
 
-    def set_save_state(self, state: Dict[Any, str]):
+    def set_save_state(self, state: Dict[Any, str]) -> None:
         self.__wram = state["wram"]
+        self.__open_bus_value = state["open_bus"]
