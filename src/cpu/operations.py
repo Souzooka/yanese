@@ -56,6 +56,31 @@ class Interpreter:
         return value
 
     @staticmethod
+    def adc(instr: Instruction) -> None:
+        """
+        ADC - Add with Carry
+
+        ADC adds the carry flag and a memory value to the accumulator.
+        See https://www.nesdev.org/wiki/Instruction_reference#ADC which describes flag changes.
+        """
+        cpu = instr.cpu
+        memory = instr.argument
+        a = cpu.a.get_value()
+        c = int(cpu.flags.c)
+        result = a + memory + c
+        cpu.a.set_value(byte.to_u8(result))
+
+        # c = result > 0xFF
+        # (unsigned overflow occurred)
+        cpu.flags.c = result > 0xFF
+        # v = (result ^ A) & (result ^ memory) & 0x80
+        # (result's sign is different from both original accumulator value and memory's values' sign)
+        cpu.flags.v = bool((result ^ a) & (result ^ memory) & 0x80)
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(byte.to_u8(result))
+
+    @staticmethod
     def _asl(cpu: CPU, value: int) -> None:
         # Result is just the value shifted to the left once
         result = byte.to_u8(value << 1)
@@ -556,6 +581,7 @@ class Operation:
 # All individual instruction types should accept the same argument type,
 # regardless of addressing mode
 _arguments = {
+    Interpreter.adc: ArgumentType.VALUE,
     Interpreter.asl: ArgumentType.ADDRESS,
     Interpreter.asl_a: ArgumentType.NONE,
     Interpreter.clc: ArgumentType.NONE,
@@ -781,11 +807,21 @@ __operations: Dict[int, Operation] = {
     ),
     # $5F
     # $60
-    # $61
+    # $61 - ADC (Indirect,X)
+    0x61: Operation(
+        Interpreter.adc,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_INDIRECT
+    ),
     # $62
     # $63
     # $64
-    # $65
+    # $65 - ADC Zero Page
+    0x65: Operation(
+        Interpreter.adc,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $66 - ROR Zero Page
     0x66: Operation(
         Interpreter.ror,
@@ -794,7 +830,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $67
     # $68
-    # $69
+    # $69 - ADC #Immediate
+    0x69: Operation(
+        Interpreter.adc,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $6A - ROR Accumulator
     0x6A: Operation(
         Interpreter.ror_a,
@@ -803,7 +844,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $6B
     # $6C
-    # $6D
+    # $6D - ADC Absolute
+    0x6D: Operation(
+        Interpreter.adc,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $6E - ROR Absolute
     0x6E: Operation(
         Interpreter.ror,
@@ -812,11 +858,22 @@ __operations: Dict[int, Operation] = {
     ),
     # $6F
     # $70
-    # $71
+    # $71 - ADC (Indirect),Y
+    0x71: Operation(
+        Interpreter.adc,
+        cycles=5,
+        addressing_mode=AddressingMode.INDIRECT_INDEXED,
+        page_cross_penalty=True
+    ),
     # $72
     # $73
     # $74
-    # $75
+    # $75 - ADC Zero Page,X
+    0x75: Operation(
+        Interpreter.adc,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $76 - ROR Zero Page,X
     0x76: Operation(
         Interpreter.ror,
@@ -830,11 +887,23 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $79
+    # $79 - ADC Absolute,Y
+    0x79: Operation(
+        Interpreter.adc,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
+        page_cross_penalty=True
+    ),
     # $7A
     # $7B
     # $7C
-    # $7D
+    # $7D - ADC Absolute,X
+    0x7D: Operation(
+        Interpreter.adc,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $7E - ROR Absolute,X
     0x7E: Operation(
         Interpreter.ror,

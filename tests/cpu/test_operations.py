@@ -21,6 +21,119 @@ def compare_params(operation: Operation, fn, cycles, addressing_mode, page_cross
 
 # fmt: off
 class TestOperationsOfficial:
+    def test_adc_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#ADC
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x69] is not None
+        assert operations[0x65] is not None
+        assert operations[0x75] is not None
+        assert operations[0x6D] is not None
+        assert operations[0x7D] is not None
+        assert operations[0x79] is not None
+        assert operations[0x61] is not None
+        assert operations[0x71] is not None
+
+        # #Immediate
+        operation = operations[0x69]
+        compare_params(operation, Interpreter.adc, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0x65]
+        compare_params(operation, Interpreter.adc, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Zero Page,X
+        operation = operations[0x75]
+        compare_params(operation, Interpreter.adc, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0x6D]
+        compare_params(operation, Interpreter.adc, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+        # Absolute,X
+        operation = operations[0x7D]
+        compare_params(operation, Interpreter.adc, 4, AddressingMode.INDEXED_ABSOLUTE_X, True, ArgumentType.VALUE)
+
+        # Absolute,Y
+        operation = operations[0x79]
+        compare_params(operation, Interpreter.adc, 4, AddressingMode.INDEXED_ABSOLUTE_Y, True, ArgumentType.VALUE)
+
+        # (Indirect,X)
+        operation = operations[0x61]
+        compare_params(operation, Interpreter.adc, 6, AddressingMode.INDEXED_INDIRECT, False, ArgumentType.VALUE)
+
+        # (Indirect),Y
+        operation = operations[0x71]
+        compare_params(operation, Interpreter.adc, 5, AddressingMode.INDIRECT_INDEXED, True, ArgumentType.VALUE)
+
+    def test_adc(self):
+        # Should add the accumulator + provided value + carry flag,
+        # and update the appropriate flags.
+
+        cpu = new_cpu()
+        cpu.a.set_value(0)
+        Interpreter.adc(Instruction(cpu, 0))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0xFE)
+        Interpreter.adc(Instruction(cpu, 2))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0x2)
+        Interpreter.adc(Instruction(cpu, 0xFE))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0x2)
+        Interpreter.adc(Instruction(cpu, 2))
+        assert cpu.a.get_value() == 4
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0x60)
+        Interpreter.adc(Instruction(cpu, 0x20))
+        assert cpu.a.get_value() == 0x80
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.v is True
+        assert cpu.flags.n is True
+
+        cpu = new_cpu()
+        cpu.a.set_value(0x90)
+        Interpreter.adc(Instruction(cpu, 0xA0))
+        assert cpu.a.get_value() == 0x30
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.v is True
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(2)
+        cpu.flags.c = True
+        Interpreter.adc(Instruction(cpu, 0x2))
+        assert cpu.a.get_value() == 0x5
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
     def test_asl_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#ASL
         # Test that the operation entries conform to what is listed on NES DEV
@@ -31,18 +144,23 @@ class TestOperationsOfficial:
         assert operations[0x0E] is not None
         assert operations[0x1E] is not None
 
+        # Implied
         operation = operations[0x0A]
         compare_params(operation, Interpreter.asl_a, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
 
+        # Zero Page
         operation = operations[0x06]
         compare_params(operation, Interpreter.asl, 5, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
 
+        # Zero Page,X
         operation = operations[0x16]
         compare_params(operation, Interpreter.asl, 6, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
 
+        # Absolute
         operation = operations[0x0E]
         compare_params(operation, Interpreter.asl, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
 
+        # Absolute,X
         operation = operations[0x1E]
         compare_params(operation, Interpreter.asl, 7, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
 
