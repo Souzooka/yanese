@@ -21,6 +21,98 @@ def compare_params(operation: Operation, fn, cycles, addressing_mode, page_cross
 
 # fmt: off
 class TestOperationsOfficial:
+    def test_asl_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#ASL
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x0A] is not None
+        assert operations[0x06] is not None
+        assert operations[0x16] is not None
+        assert operations[0x0E] is not None
+        assert operations[0x1E] is not None
+
+        operation = operations[0x0A]
+        compare_params(operation, Interpreter.asl_a, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+        operation = operations[0x06]
+        compare_params(operation, Interpreter.asl, 5, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x16]
+        compare_params(operation, Interpreter.asl, 6, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x0E]
+        compare_params(operation, Interpreter.asl, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x1E]
+        compare_params(operation, Interpreter.asl, 7, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
+
+    def test_asl_a(self):
+        # asl_a should shift the accumulator left 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+
+        cpu.a.set_value(0b00111100)
+        Interpreter.asl_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b01111000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0)
+        Interpreter.asl_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b10000000)
+        Interpreter.asl_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b01000000)
+        Interpreter.asl_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b10000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_asl(self):
+        # asl should shift the value in the memory address left 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+        address = 4
+
+        cpu.memory.write(address, 0b00111100)
+        Interpreter.asl(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b01111000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0)
+        Interpreter.asl(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0b10000000)
+        Interpreter.asl(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0b01000000)
+        Interpreter.asl(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b10000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
     def test_clc_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#CLC
         # Test that the operation entries conform to what is listed on NES DEV
@@ -279,6 +371,98 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is True
 
+    def test_lsr_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#LSR
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x4A] is not None
+        assert operations[0x46] is not None
+        assert operations[0x56] is not None
+        assert operations[0x4E] is not None
+        assert operations[0x5E] is not None
+
+        operation = operations[0x4A]
+        compare_params(operation, Interpreter.lsr_a, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+        operation = operations[0x46]
+        compare_params(operation, Interpreter.lsr, 5, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x56]
+        compare_params(operation, Interpreter.lsr, 6, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x4E]
+        compare_params(operation, Interpreter.lsr, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x5E]
+        compare_params(operation, Interpreter.lsr, 7, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
+
+    def test_lsr_a(self):
+        # lsr_a should shift the accumulator right 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+
+        cpu.a.set_value(0b00111100)
+        Interpreter.lsr_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b00011110
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0)
+        Interpreter.lsr_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b00000001)
+        Interpreter.lsr_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b10000000)
+        Interpreter.lsr_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b01000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+    def test_lsr(self):
+        # lsr should shift the value in the memory address right 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+        address = 4
+
+        cpu.memory.write(address, 0b00111100)
+        Interpreter.lsr(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b00011110
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0)
+        Interpreter.lsr(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0b00000001)
+        Interpreter.lsr(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0b10000000)
+        Interpreter.lsr(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b01000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
     def test_nop_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#NOP
         # Test that the operation entries conform to what is listed on NES DEV
@@ -305,6 +489,190 @@ class TestOperationsOfficial:
 
         cpu = new_cpu(CPUWrapper)
         Interpreter.nop(Instruction(cpu, 0))
+
+    def test_rol_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#ROL
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x2A] is not None
+        assert operations[0x26] is not None
+        assert operations[0x36] is not None
+        assert operations[0x2E] is not None
+        assert operations[0x3E] is not None
+
+        operation = operations[0x2A]
+        compare_params(operation, Interpreter.rol_a, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+        operation = operations[0x26]
+        compare_params(operation, Interpreter.rol, 5, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x36]
+        compare_params(operation, Interpreter.rol, 6, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x2E]
+        compare_params(operation, Interpreter.rol, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x3E]
+        compare_params(operation, Interpreter.rol, 7, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
+
+    def test_rol_a(self):
+        # rol_a should rotate the accumulator left 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+
+        cpu.a.set_value(0b00111100)
+        Interpreter.rol_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b01111000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0)
+        Interpreter.rol_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b10000000)
+        Interpreter.rol_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b00000001
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b01000000)
+        Interpreter.rol_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b10000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_rol(self):
+        # rol should rotate the value in the memory address right 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+        address = 4
+
+        cpu.memory.write(address, 0b00111100)
+        Interpreter.rol(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b01111000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0)
+        Interpreter.rol(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0b10000000)
+        Interpreter.rol(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b00000001
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0b01000000)
+        Interpreter.rol(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b10000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_ror_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#ROR
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x6A] is not None
+        assert operations[0x66] is not None
+        assert operations[0x76] is not None
+        assert operations[0x6E] is not None
+        assert operations[0x7E] is not None
+
+        operation = operations[0x6A]
+        compare_params(operation, Interpreter.ror_a, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+        operation = operations[0x66]
+        compare_params(operation, Interpreter.ror, 5, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x76]
+        compare_params(operation, Interpreter.ror, 6, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x6E]
+        compare_params(operation, Interpreter.ror, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+        operation = operations[0x7E]
+        compare_params(operation, Interpreter.ror, 7, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
+
+    def test_ror_a(self):
+        # ror_a should rotate the accumulator right 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+
+        cpu.a.set_value(0b00111100)
+        Interpreter.ror_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b00011110
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0)
+        Interpreter.ror_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b00000001)
+        Interpreter.ror_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b10000000
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+        cpu.a.set_value(0b10000000)
+        Interpreter.ror_a(Instruction(cpu))
+        assert cpu.a.get_value() == 0b01000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+    def test_ror(self):
+        # ror should rotate the value in the memory address right 1.
+        # Flags (c,z,n) should also be set appropriately
+        cpu = new_cpu()
+        address = 4
+
+        cpu.memory.write(address, 0b00111100)
+        Interpreter.ror(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b00011110
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0)
+        Interpreter.ror(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0
+        assert cpu.flags.c is False
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.memory.write(address, 0b00000001)
+        Interpreter.ror(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b10000000
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+        cpu.memory.write(address, 0b10000000)
+        Interpreter.ror(Instruction(cpu, address))
+        assert cpu.memory.read(address) == 0b01000000
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
 
     def test_sec_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#SEC

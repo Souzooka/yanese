@@ -4,6 +4,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING, Callable, Dict, List
 
 from src.cpu.addressing import AddressingMode
+from src.util import byte
 
 if TYPE_CHECKING:
     from src.cpu.CPU import CPU
@@ -47,10 +48,48 @@ class Interpreter:
         """
         Imitates read-modify-write behavior, where the original value is written back to
         the address before the modified value.
+
+        Returns the 8-bit value at the given address.
         """
         value = cpu.memory.read(address)
         cpu.memory.write(address, value)
         return value
+
+    @staticmethod
+    def _asl(cpu: CPU, value: int) -> None:
+        # Result is just the value shifted to the left once
+        result = byte.to_u8(value << 1)
+
+        # Set the appropriate status flags
+        # c = value bit 7
+        cpu.flags.c = bool(value & (1 << 7))
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(result)
+
+        return result
+
+    @staticmethod
+    def asl(instr: Instruction) -> None:
+        """
+        ASL - Arithmetic Shift Left
+
+        ASL shifts all of the bits of a memory value or the accumulator one position to the left,
+        moving the value of each bit into the next bit.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+        value = Interpreter._rmw(cpu, address)
+        result = Interpreter._asl(cpu, value)
+        cpu.memory.write(address, result)
+
+    @staticmethod
+    def asl_a(instr: Instruction) -> None:
+        # Accumulator version of asl
+        cpu = instr.cpu
+        value = cpu.a.get_value()
+        result = Interpreter._asl(cpu, value)
+        cpu.a.set_value(result)
 
     @staticmethod
     def brk(instr: Instruction) -> None:
@@ -60,6 +99,7 @@ class Interpreter:
     def clc(instr: Instruction) -> None:
         """
         CLC - Clear Carry
+
         CLC clears the carry flag.
         """
         instr.cpu.flags.c = False
@@ -68,6 +108,7 @@ class Interpreter:
     def cld(instr: Instruction) -> None:
         """
         CLD - Clear Decimal
+
         CLD clears the decimal flag.
         """
         instr.cpu.flags.d = False
@@ -76,6 +117,7 @@ class Interpreter:
     def cli(instr: Instruction) -> None:
         """
         CLI - Clear Interrupt Disable
+
         CLI clears the interrupt disable flag.
         This effect is delayed by 1 instruction.
         """
@@ -89,6 +131,7 @@ class Interpreter:
     def clv(instr: Instruction) -> None:
         """
         CLV - Clear Overflow
+
         CLV clears the overflow flag.
         """
         instr.cpu.flags.v = False
@@ -97,6 +140,7 @@ class Interpreter:
     def lda(instr: Instruction) -> None:
         """
         LDA - Load A
+
         LDA loads a memory value into the accumulator.
         """
         cpu = instr.cpu
@@ -112,6 +156,7 @@ class Interpreter:
     def ldx(instr: Instruction) -> None:
         """
         LDX - Load X
+
         LDX loads a memory value into the X register.
         """
         cpu = instr.cpu
@@ -127,6 +172,7 @@ class Interpreter:
     def ldy(instr: Instruction) -> None:
         """
         LDY - Load Y
+
         LDY loads a memory value into the Y register.
         """
         cpu = instr.cpu
@@ -139,18 +185,132 @@ class Interpreter:
         cpu.flags.update_zero_and_negative(value)
 
     @staticmethod
+    def _lsr(cpu: CPU, value: int) -> None:
+        # Result is just the value shifted to the right once
+        result = value >> 1
+
+        # Set the appropriate status flags
+        # c = value bit 0
+        cpu.flags.c = bool(value & 1)
+        # z = result == 0
+        # n = 0
+        cpu.flags.update_zero_and_negative(result)
+
+        return result
+
+    @staticmethod
+    def lsr(instr: Instruction) -> None:
+        """
+        LSR - Logical Shift Right
+
+        LSR shifts all of the bits of a memory value or the accumulator one position to the right,
+        moving the value of each bit into the next bit.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+        value = Interpreter._rmw(cpu, address)
+        result = Interpreter._lsr(cpu, value)
+        cpu.memory.write(address, result)
+
+    @staticmethod
+    def lsr_a(instr: Instruction) -> None:
+        # Accumulator version of lsr
+        cpu = instr.cpu
+        value = cpu.a.get_value()
+        result = Interpreter._lsr(cpu, value)
+        cpu.a.set_value(result)
+
+    @staticmethod
     def nop(instr: Instruction) -> None:
         """
         NOP - No Operation
+
         NOP - Just burns 2 cycles on the CPU.
               No action necessary here.
         """
         pass
 
     @staticmethod
+    def _rol(cpu: CPU, value: int) -> None:
+        # Result is just the value rotated to the left once.
+        # (e.g. 0b10101000 becomes 0b01010001)
+        carry = (value & (1 << 7)) >> 7
+        result = byte.to_u8((value << 1) | carry)
+
+        # Set the appropriate status flags
+        # c = value bit 7
+        cpu.flags.c = bool(carry)
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(result)
+
+        return result
+
+    @staticmethod
+    def rol(instr: Instruction) -> None:
+        """
+        ROL - Rotate Left
+
+        ROL shifts a memory value or the accumulator to the left, moving the value of each bit into the next bit and
+        treating the carry flag as though it is both above bit 7 and below bit 0.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+        value = Interpreter._rmw(cpu, address)
+        result = Interpreter._rol(cpu, value)
+        cpu.memory.write(address, result)
+
+    @staticmethod
+    def rol_a(instr: Instruction) -> None:
+        # Accumulator version of rol
+        cpu = instr.cpu
+        value = cpu.a.get_value()
+        result = Interpreter._rol(cpu, value)
+        cpu.a.set_value(result)
+
+    @staticmethod
+    def _ror(cpu: CPU, value: int) -> None:
+        # Result is just the value rotated to the right once.
+        # (e.g. 0b00101001 becomes 0b10010100)
+        carry = value & 1
+        result = byte.to_u8((value >> 1) | (carry << 7))
+
+        # Set the appropriate status flags
+        # c = value bit 0
+        cpu.flags.c = bool(carry)
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(result)
+
+        return result
+
+    @staticmethod
+    def ror(instr: Instruction) -> None:
+        """
+        ROR - Rotate Right
+
+        ROR shifts a memory value or the accumulator to the right, moving the value of each bit into the next bit and
+        treating the carry flag as though it is both above bit 7 and below bit 0.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+        value = Interpreter._rmw(cpu, address)
+        result = Interpreter._ror(cpu, value)
+        cpu.memory.write(address, result)
+
+    @staticmethod
+    def ror_a(instr: Instruction) -> None:
+        # Accumulator version of ror
+        cpu = instr.cpu
+        value = cpu.a.get_value()
+        result = Interpreter._ror(cpu, value)
+        cpu.a.set_value(result)
+
+    @staticmethod
     def sec(instr: Instruction) -> None:
         """
         SEC - Set Carry
+
         SEC sets the carry flag.
         """
         instr.cpu.flags.c = True
@@ -159,6 +319,7 @@ class Interpreter:
     def sed(instr: Instruction) -> None:
         """
         SED - Set Decimal
+
         SED sets the decimal flag.
         """
         instr.cpu.flags.d = True
@@ -167,6 +328,7 @@ class Interpreter:
     def sei(instr: Instruction) -> None:
         """
         SEI - Set Interrupt Disable
+
         SEI sets the interrupt disable flag.
         This effect is delayed by 1 instruction.
         """
@@ -180,6 +342,7 @@ class Interpreter:
     def sta(instr: Instruction) -> None:
         """
         STA - Store A
+
         STA stores the accumulator value into memory.
         """
         cpu = instr.cpu
@@ -192,6 +355,7 @@ class Interpreter:
     def stx(instr: Instruction) -> None:
         """
         STX - Store X
+
         STX stores the X register value into memory.
         """
         cpu = instr.cpu
@@ -204,6 +368,7 @@ class Interpreter:
     def sty(instr: Instruction) -> None:
         """
         STY - Store Y
+
         STY stores the Y register value into memory.
         """
         cpu = instr.cpu
@@ -216,6 +381,7 @@ class Interpreter:
     def tax(instr: Instruction) -> None:
         """
         TAX - Transfer A to X
+
         TAX copies the accumulator value to the X register.
         """
         cpu = instr.cpu
@@ -227,6 +393,7 @@ class Interpreter:
     def tay(instr: Instruction) -> None:
         """
         TAX - Transfer A to Y
+
         TAX copies the accumulator value to the Y register.
         """
         cpu = instr.cpu
@@ -238,6 +405,7 @@ class Interpreter:
     def tsx(instr: Instruction) -> None:
         """
         TSX - Transfer Stack Pointer to X
+
         TSX copies the stack pointer value to the X register.
         """
         cpu = instr.cpu
@@ -249,6 +417,7 @@ class Interpreter:
     def txa(instr: Instruction) -> None:
         """
         TXA - Transfer X to A
+
         TXA copies the X register value to the accumulator.
         """
         cpu = instr.cpu
@@ -260,6 +429,7 @@ class Interpreter:
     def txs(instr: Instruction) -> None:
         """
         TXS - Transfer X to Stack Pointer
+
         TXS copies the X register value to the stack pointer.
         """
         cpu = instr.cpu
@@ -271,6 +441,7 @@ class Interpreter:
     def tya(instr: Instruction) -> None:
         """
         TYA - Transfer Y to A
+
         TYA copies the Y register value to the accumulator.
         """
         cpu = instr.cpu
@@ -299,6 +470,8 @@ class Operation:
 # All individual instruction types should accept the same argument type,
 # regardless of addressing mode
 _arguments = {
+    Interpreter.asl: ArgumentType.ADDRESS,
+    Interpreter.asl_a: ArgumentType.NONE,
     Interpreter.clc: ArgumentType.NONE,
     Interpreter.cld: ArgumentType.NONE,
     Interpreter.cli: ArgumentType.NONE,
@@ -306,7 +479,13 @@ _arguments = {
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
     Interpreter.ldy: ArgumentType.VALUE,
+    Interpreter.lsr: ArgumentType.ADDRESS,
+    Interpreter.lsr_a: ArgumentType.NONE,
     Interpreter.nop: ArgumentType.NONE,
+    Interpreter.rol: ArgumentType.ADDRESS,
+    Interpreter.rol_a: ArgumentType.NONE,
+    Interpreter.ror: ArgumentType.ADDRESS,
+    Interpreter.ror_a: ArgumentType.NONE,
     Interpreter.sec: ArgumentType.NONE,
     Interpreter.sed: ArgumentType.NONE,
     Interpreter.sei: ArgumentType.NONE,
@@ -329,15 +508,30 @@ __operations: Dict[int, Operation] = {
     # $03
     # $04
     # $05
-    # $06
+    # $06 - ASL Zero Page
+    0x06: Operation(
+        Interpreter.asl,
+        cycles=5,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $07
     # $08
     # $09
-    # $0A
+    # $0A - ASL Accumulator
+    0x0A: Operation(
+        Interpreter.asl_a,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $0B
     # $0C
     # $0D
-    # $0E
+    # $0E - ASL Absolute
+    0x0E: Operation(
+        Interpreter.asl,
+        cycles=6,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $0F
     # $10
     # $11
@@ -345,7 +539,12 @@ __operations: Dict[int, Operation] = {
     # $13
     # $14
     # $15
-    # $16
+    # $16 - ASL Zero Page,X
+    0x16: Operation(
+        Interpreter.asl,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $17
     # $18 - CLC Implied
     0x18: Operation(
@@ -359,6 +558,11 @@ __operations: Dict[int, Operation] = {
     # $1C
     # $1D
     # $1E
+    0x1E: Operation(
+        Interpreter.asl,
+        cycles=7,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
+    ),
     # $1F
     # $20
     # $21
@@ -366,15 +570,30 @@ __operations: Dict[int, Operation] = {
     # $23
     # $24
     # $25
-    # $26
+    # $26 - ROL Zero Page
+    0x26: Operation(
+        Interpreter.rol,
+        cycles=5,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $27
     # $28
     # $29
-    # $2A
+    # $2A - ROL Accumulator
+    0x2A: Operation(
+        Interpreter.rol_a,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $2B
     # $2C
     # $2D
-    # $2E
+    # $2E - ROL Absolute
+    0x2E: Operation(
+        Interpreter.rol,
+        cycles=6,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $2F
     # $30
     # $31
@@ -382,7 +601,12 @@ __operations: Dict[int, Operation] = {
     # $33
     # $34
     # $35
-    # $36
+    # $36 - ROL Zero Page,X
+    0x36: Operation(
+        Interpreter.rol,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $37
     # $38 - SEC Implied
     0x38: Operation(
@@ -395,7 +619,12 @@ __operations: Dict[int, Operation] = {
     # $3B
     # $3C
     # $3D
-    # $3E
+    # $3E - ROL Absolute,X
+    0x3E: Operation(
+        Interpreter.rol,
+        cycles=7,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
+    ),
     # $3F
     # $40
     # $41
@@ -403,15 +632,30 @@ __operations: Dict[int, Operation] = {
     # $43
     # $44
     # $45
-    # $46
+    # $46 - LSR Zero Page
+    0x46: Operation(
+        Interpreter.lsr,
+        cycles=5,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $47
     # $48
     # $49
-    # $4A
+    # $4A - LSR Logical Shift Right
+    0x4A: Operation(
+        Interpreter.lsr_a,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $4B
     # $4C
     # $4D
-    # $4E
+    # $4E - LSR Absolute
+    0x4E: Operation(
+        Interpreter.lsr,
+        cycles=6,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $4F
     # $50
     # $51
@@ -419,7 +663,12 @@ __operations: Dict[int, Operation] = {
     # $53
     # $54
     # $55
-    # $56
+    # $56 - LSR Zero Page,X
+    0x56: Operation(
+        Interpreter.lsr,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $57
     # $58 - CLI Implied
     0x58: Operation(
@@ -432,7 +681,12 @@ __operations: Dict[int, Operation] = {
     # $5B
     # $5C
     # $5D
-    # $5E
+    # $5E - LSR Absolute,X
+    0x5E: Operation(
+        Interpreter.lsr,
+        cycles=7,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
+    ),
     # $5F
     # $60
     # $61
@@ -440,15 +694,30 @@ __operations: Dict[int, Operation] = {
     # $63
     # $64
     # $65
-    # $66
+    # $66 - ROR Zero Page
+    0x66: Operation(
+        Interpreter.ror,
+        cycles=5,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $67
     # $68
     # $69
-    # $6A
+    # $6A - ROR Accumulator
+    0x6A: Operation(
+        Interpreter.ror_a,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $6B
     # $6C
     # $6D
-    # $6E
+    # $6E - ROR Absolute
+    0x6E: Operation(
+        Interpreter.ror,
+        cycles=6,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $6F
     # $70
     # $71
@@ -456,7 +725,12 @@ __operations: Dict[int, Operation] = {
     # $73
     # $74
     # $75
-    # $76
+    # $76 - ROR Zero Page,X
+    0x76: Operation(
+        Interpreter.ror,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $77
     # $78 - SEI Implied
     0x78: Operation(
@@ -469,7 +743,12 @@ __operations: Dict[int, Operation] = {
     # $7B
     # $7C
     # $7D
-    # $7E
+    # $7E - ROR Absolute,X
+    0x7E: Operation(
+        Interpreter.ror,
+        cycles=7,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
+    ),
     # $7F
     # $80
     # $81 - STA (Indirect,X)
