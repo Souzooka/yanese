@@ -137,6 +137,92 @@ class Interpreter:
         instr.cpu.flags.v = False
 
     @staticmethod
+    def dec(instr: Instruction) -> None:
+        """
+        DEC - Decrement Memory
+
+        DEC subtracts 1 from a memory location.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+        value = Interpreter._rmw(cpu, address)
+        result = byte.to_u8(value - 1)
+        cpu.memory.write(address, result)
+        # Also update appropriate flags
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
+    def dex(instr: Instruction) -> None:
+        """
+        DEX - Decrement X
+
+        DEX subtracts 1 from the X register.
+        """
+        cpu = instr.cpu
+        value = cpu.x.get_value()
+        result = byte.to_u8(value - 1)
+        cpu.x.set_value(result)
+        # Also update appropriate flags
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
+    def dey(instr: Instruction) -> None:
+        """
+        DEY - Decrement Y
+
+        DEY subtracts 1 from the Y register.
+        """
+        cpu = instr.cpu
+        value = cpu.y.get_value()
+        result = byte.to_u8(value - 1)
+        cpu.y.set_value(result)
+        # Also update appropriate flags
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
+    def inc(instr: Instruction) -> None:
+        """
+        INC - Increment Memory
+
+        INC adds 1 to a memory location.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+        value = Interpreter._rmw(cpu, address)
+        result = byte.to_u8(value + 1)
+        cpu.memory.write(address, result)
+        # Also update appropriate flags
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
+    def inx(instr: Instruction) -> None:
+        """
+        INX - Increment X
+
+        INX adds 1 to the X register.
+        """
+        cpu = instr.cpu
+        value = cpu.x.get_value()
+        result = byte.to_u8(value + 1)
+        cpu.x.set_value(result)
+        # Also update appropriate flags
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
+    def iny(instr: Instruction) -> None:
+        """
+        INY - Increment Y
+
+        INY adds 1 to the Y register.
+        """
+        cpu = instr.cpu
+        value = cpu.y.get_value()
+        result = byte.to_u8(value + 1)
+        cpu.y.set_value(result)
+        # Also update appropriate flags
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
     def lda(instr: Instruction) -> None:
         """
         LDA - Load A
@@ -476,6 +562,12 @@ _arguments = {
     Interpreter.cld: ArgumentType.NONE,
     Interpreter.cli: ArgumentType.NONE,
     Interpreter.clv: ArgumentType.NONE,
+    Interpreter.dec: ArgumentType.ADDRESS,
+    Interpreter.dex: ArgumentType.NONE,
+    Interpreter.dey: ArgumentType.NONE,
+    Interpreter.inc: ArgumentType.ADDRESS,
+    Interpreter.inx: ArgumentType.NONE,
+    Interpreter.iny: ArgumentType.NONE,
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
     Interpreter.ldy: ArgumentType.VALUE,
@@ -778,7 +870,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ZERO_PAGE
     ),
     # $87
-    # $88
+    # $88 - DEY Implied
+    0x88: Operation(
+        Interpreter.dey,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $89
     # $8A - TXA Implied
     0x8A: Operation(
@@ -1015,15 +1112,35 @@ __operations: Dict[int, Operation] = {
     # $C3
     # $C4
     # $C5
-    # $C6
+    # $C6 - DEC Zero Page
+    0xC6: Operation(
+        Interpreter.dec,
+        cycles=5,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $C7
-    # $C8
+    # $C8 - INY Implied
+    0xC8: Operation(
+        Interpreter.iny,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $C9
-    # $CA
+    # $CA - DEX Implied
+    0xCA: Operation(
+        Interpreter.dex,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $CB
     # $CC
     # $CD
-    # $CE
+    # $CE - DEC Absolute
+    0xCE: Operation(
+        Interpreter.dec,
+        cycles=6,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $CF
     # $D0
     # $D1
@@ -1031,7 +1148,12 @@ __operations: Dict[int, Operation] = {
     # $D3
     # $D4
     # $D5
-    # $D6
+    # $D6 - DEC Zero Page,X
+    0xD6: Operation(
+        Interpreter.dec,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $D7
     # $D8 - CLD Implied
     0xD8: Operation(
@@ -1044,7 +1166,12 @@ __operations: Dict[int, Operation] = {
     # $DB
     # $DC
     # $DD
-    # $DE
+    # $DE - DEC Absolute,X
+    0xDE: Operation(
+        Interpreter.dec,
+        cycles=7,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
+    ),
     # $DF
     # $E0
     # $E1
@@ -1052,9 +1179,19 @@ __operations: Dict[int, Operation] = {
     # $E3
     # $E4
     # $E5
-    # $E6
+    # $E6 - INC Zero Page
+    0xE6: Operation(
+        Interpreter.inc,
+        cycles=5,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $E7
-    # $E8
+    # $E8 - INX Implied
+    0xE8: Operation(
+        Interpreter.inx,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $E9
     # $EA
     0xEA: Operation(
@@ -1065,7 +1202,12 @@ __operations: Dict[int, Operation] = {
     # $EB
     # $EC
     # $ED
-    # $EE
+    # $EE - INC Absolute
+    0xEE: Operation(
+        Interpreter.inc,
+        cycles=6,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $EF
     # $F0
     # $F1
@@ -1073,7 +1215,12 @@ __operations: Dict[int, Operation] = {
     # $F3
     # $F4
     # $F5
-    # $F6
+    # $F6 - INC Zero Page,X
+    0xF6: Operation(
+        Interpreter.inc,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $F7
     # $F8 - SED Implied
     0xF8: Operation(
@@ -1086,7 +1233,12 @@ __operations: Dict[int, Operation] = {
     # $FB
     # $FC
     # $FD
-    # $FE
+    # $FE - INC Absolute,X
+    0xFE: Operation(
+        Interpreter.inc,
+        cycles=7,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
+    ),
     # $FF
 }
 # fmt: on
