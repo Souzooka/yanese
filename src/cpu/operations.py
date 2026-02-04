@@ -418,6 +418,31 @@ class Interpreter:
         cpu.a.set_value(result)
 
     @staticmethod
+    def sbc(instr: Instruction) -> None:
+        """
+        SBC - Subtract with Carry
+
+        ADC adds the carry flag and a memory value to the accumulator.
+        SBC subtracts a memory value and the NOT of the carry flag from the accumulator.
+        """
+        cpu = instr.cpu
+        memory = instr.argument
+        a = cpu.a.get_value()
+        c = int(not cpu.flags.c)
+        result = a - memory - c
+        cpu.a.set_value(byte.to_u8(result))
+
+        # c = ~(result < $00)
+        # (unsigned overflow occurred)
+        cpu.flags.c = not result < 0x0
+        # v = (result ^ A) & (result ^ memory) & 0x80
+        # (result's sign is different from both original accumulator value and memory's values' sign)
+        cpu.flags.v = bool((result ^ a) & (result ^ memory) & 0x80)
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(byte.to_u8(result))
+
+    @staticmethod
     def sec(instr: Instruction) -> None:
         """
         SEC - Set Carry
@@ -604,6 +629,7 @@ _arguments = {
     Interpreter.rol_a: ArgumentType.NONE,
     Interpreter.ror: ArgumentType.ADDRESS,
     Interpreter.ror_a: ArgumentType.NONE,
+    Interpreter.sbc: ArgumentType.VALUE,
     Interpreter.sec: ArgumentType.NONE,
     Interpreter.sed: ArgumentType.NONE,
     Interpreter.sei: ArgumentType.NONE,
@@ -1243,11 +1269,21 @@ __operations: Dict[int, Operation] = {
     ),
     # $DF
     # $E0
-    # $E1
+    # $E1 - SBC (Indirect,X)
+    0xE1: Operation(
+        Interpreter.sbc,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_INDIRECT
+    ),
     # $E2
     # $E3
     # $E4
-    # $E5
+    # $E5 - SBC Zero Page
+    0xE5: Operation(
+        Interpreter.sbc,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $E6 - INC Zero Page
     0xE6: Operation(
         Interpreter.inc,
@@ -1261,8 +1297,13 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $E9
-    # $EA
+    # $E9 - SBC #Immediate
+    0xE9: Operation(
+        Interpreter.sbc,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
+    # $EA - NOP
     0xEA: Operation(
         Interpreter.nop,
         cycles=2,
@@ -1270,7 +1311,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $EB
     # $EC
-    # $ED
+    # $ED - SBC Absolute
+    0xED: Operation(
+        Interpreter.sbc,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $EE - INC Absolute
     0xEE: Operation(
         Interpreter.inc,
@@ -1279,11 +1325,22 @@ __operations: Dict[int, Operation] = {
     ),
     # $EF
     # $F0
-    # $F1
+    # $F1 - SBC (Indirect),Y
+    0xF1: Operation(
+        Interpreter.sbc,
+        cycles=5,
+        addressing_mode=AddressingMode.INDIRECT_INDEXED,
+        page_cross_penalty=True
+    ),
     # $F2
     # $F3
     # $F4
-    # $F5
+    # $F5 - SBC Zero Page,X
+    0xF5: Operation(
+        Interpreter.sbc,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $F6 - INC Zero Page,X
     0xF6: Operation(
         Interpreter.inc,
@@ -1297,11 +1354,23 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $F9
+    # $F9 - SBC Absolute,Y
+    0xF9: Operation(
+        Interpreter.sbc,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
+        page_cross_penalty=True
+    ),
     # $FA
     # $FB
     # $FC
-    # $FD
+    # $FD - SBC Absolute,X
+    0xFD: Operation(
+        Interpreter.sbc,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $FE - INC Absolute,X
     0xFE: Operation(
         Interpreter.inc,

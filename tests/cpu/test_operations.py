@@ -1016,6 +1016,96 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is False
 
+    def test_sbc_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#SBC
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xE9] is not None
+        assert operations[0xE5] is not None
+        assert operations[0xF5] is not None
+        assert operations[0xED] is not None
+        assert operations[0xFD] is not None
+        assert operations[0xF9] is not None
+        assert operations[0xE1] is not None
+        assert operations[0xF1] is not None
+
+        # #Immediate
+        operation = operations[0xE9]
+        compare_params(operation, Interpreter.sbc, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0xE5]
+        compare_params(operation, Interpreter.sbc, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Zero Page,X
+        operation = operations[0xF5]
+        compare_params(operation, Interpreter.sbc, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0xED]
+        compare_params(operation, Interpreter.sbc, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+        # Absolute,X
+        operation = operations[0xFD]
+        compare_params(operation, Interpreter.sbc, 4, AddressingMode.INDEXED_ABSOLUTE_X, True, ArgumentType.VALUE)
+
+        # Absolute,Y
+        operation = operations[0xF9]
+        compare_params(operation, Interpreter.sbc, 4, AddressingMode.INDEXED_ABSOLUTE_Y, True, ArgumentType.VALUE)
+
+        # (Indirect,X)
+        operation = operations[0xE1]
+        compare_params(operation, Interpreter.sbc, 6, AddressingMode.INDEXED_INDIRECT, False, ArgumentType.VALUE)
+
+        # (Indirect),Y
+        operation = operations[0xF1]
+        compare_params(operation, Interpreter.sbc, 5, AddressingMode.INDIRECT_INDEXED, True, ArgumentType.VALUE)
+
+    def test_sbc(self):
+        # Should do [A] = [A] - [value] - ~carry
+        # and update the appropriate flags.
+
+        cpu = new_cpu()
+        cpu.a.set_value(0)
+        cpu.flags.c = True
+        Interpreter.sbc(Instruction(cpu, 0))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0x2)
+        cpu.flags.c = True
+        Interpreter.sbc(Instruction(cpu, 3))
+        assert cpu.a.get_value() == 0xFF
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.v is True
+        assert cpu.flags.n is True
+
+        cpu = new_cpu()
+        cpu.a.set_value(0xFF)
+        cpu.flags.c = True
+        Interpreter.sbc(Instruction(cpu, 0xFE))
+        assert cpu.a.get_value() == 1
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.v is True
+        assert cpu.flags.n is False
+
+        cpu = new_cpu()
+        cpu.a.set_value(0x4)
+        cpu.flags.c = False
+        Interpreter.sbc(Instruction(cpu, 0x2))
+        assert cpu.a.get_value() == 1
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+
     def test_sec_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#SEC
         # Test that the operation entries conform to what is listed on NES DEV
