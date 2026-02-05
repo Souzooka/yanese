@@ -406,6 +406,17 @@ class Interpreter:
         cpu.flags.update_zero_and_negative(result)
 
     @staticmethod
+    def jmp(instr: Instruction) -> None:
+        """
+        JMP - Jump
+
+        JMP sets the program counter to a new value, allowing code to execute from a new location.
+        """
+        cpu = instr.cpu
+        address = instr.argument
+        cpu.pc.set_value(address)
+
+    @staticmethod
     def lda(instr: Instruction) -> None:
         """
         LDA - Load A
@@ -806,6 +817,7 @@ _arguments = {
     Interpreter.inc: ArgumentType.ADDRESS,
     Interpreter.inx: ArgumentType.NONE,
     Interpreter.iny: ArgumentType.NONE,
+    Interpreter.jmp: ArgumentType.ADDRESS,
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
     Interpreter.ldy: ArgumentType.VALUE,
@@ -1103,7 +1115,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.IMPLICIT
     ),
     # $4B
-    # $4C
+    # $4C - JMP Absolute
+    0x4C: Operation(
+        Interpreter.jmp,
+        cycles=3,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $4D - EOR Absolute
     0x4D: Operation(
         Interpreter.eor,
@@ -1214,7 +1231,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.IMPLICIT
     ),
     # $6B
-    # $6C
+    # $6C - JMP (Indirect)
+    0x6C: Operation(
+        Interpreter.jmp,
+        cycles=5,
+        addressing_mode=AddressingMode.INDIRECT
+    ),
     # $6D - ADC Absolute
     0x6D: Operation(
         Interpreter.adc,
