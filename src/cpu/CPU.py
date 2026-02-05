@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from src.cpu.registers import FlagsRegister, Register8Bit, Register16Bit
+from src.cpu.Stack import Stack
 
 if TYPE_CHECKING:
     from src.CPUMemory import CPUMemory
@@ -20,6 +21,9 @@ class CPU:
         self.y = Register8Bit()
         self.pc = Register16Bit()
         self.sp = Register8Bit()
+
+        # Interface for stack operations
+        self.stack = Stack(self.memory, self.sp)
 
         # Status Register
         # https://www.nesdev.org/wiki/Status_flags
