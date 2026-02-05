@@ -196,6 +196,47 @@ class Interpreter:
         """
         instr.cpu.flags.v = False
 
+    def _cmp(cpu: CPU, reg_value: int, mem_value: int) -> None:
+        result = reg_value - mem_value
+        cpu.flags.c = result >= 0
+        cpu.flags.update_zero_and_negative(byte.to_u8(result))
+
+    @staticmethod
+    def cmp(instr: Instruction) -> None:
+        """
+        CMP - Compare A
+
+        CMP compares A to a memory value, setting flags as appropriate but not modifying any registers.
+        """
+        cpu = instr.cpu
+        memory = instr.argument
+        a = cpu.a.get_value()
+        Interpreter._cmp(cpu, a, memory)
+
+    @staticmethod
+    def cpx(instr: Instruction) -> None:
+        """
+        CPX - Compare X
+
+        CPX compares X to a memory value, setting flags as appropriate but not modifying any registers.
+        """
+        cpu = instr.cpu
+        memory = instr.argument
+        x = cpu.x.get_value()
+        Interpreter._cmp(cpu, x, memory)
+
+    @staticmethod
+    def cpy(instr: Instruction) -> None:
+        """
+        CPY - Compare Y
+
+        CPY compares Y to a memory value, setting flags as appropriate but not modifying any registers.
+        """
+        cpu = instr.cpu
+        memory = instr.argument
+        y = cpu.y.get_value()
+        Interpreter._cmp(cpu, y, memory)
+
     @staticmethod
     def dec(instr: Instruction) -> None:
         """
@@ -680,6 +721,9 @@ _arguments = {
     Interpreter.cld: ArgumentType.NONE,
     Interpreter.cli: ArgumentType.NONE,
     Interpreter.clv: ArgumentType.NONE,
+    Interpreter.cmp: ArgumentType.VALUE,
+    Interpreter.cpx: ArgumentType.VALUE,
+    Interpreter.cpy: ArgumentType.VALUE,
     Interpreter.dec: ArgumentType.ADDRESS,
     Interpreter.dex: ArgumentType.NONE,
     Interpreter.dey: ArgumentType.NONE,
@@ -1409,12 +1453,32 @@ __operations: Dict[int, Operation] = {
         page_cross_penalty=True
     ),
     # $BF
-    # $C0
-    # $C1
+    # $C0 - CPY #Immediate
+    0xC0: Operation(
+        Interpreter.cpy,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
+    # $C1 - CMP (Indirect,X)
+    0xC1: Operation(
+        Interpreter.cmp,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_INDIRECT
+    ),
     # $C2
     # $C3
-    # $C4
-    # $C5
+    # $C4 - CPY Zero Page
+    0xC4: Operation(
+        Interpreter.cpy,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
+    # $C5 - CMP Zero Page
+    0xC5: Operation(
+        Interpreter.cmp,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $C6 - DEC Zero Page
     0xC6: Operation(
         Interpreter.dec,
@@ -1428,7 +1492,12 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $C9
+    # $C9 - CMP #Immediate
+    0xC9: Operation(
+        Interpreter.cmp,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $CA - DEX Implied
     0xCA: Operation(
         Interpreter.dex,
@@ -1436,8 +1505,18 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.IMPLICIT
     ),
     # $CB
-    # $CC
-    # $CD
+    # $CC - CPY Absolute
+    0xCC: Operation(
+        Interpreter.cpy,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
+    # $CD - CMP Absolute
+    0xCD: Operation(
+        Interpreter.cmp,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $CE - DEC Absolute
     0xCE: Operation(
         Interpreter.dec,
@@ -1446,11 +1525,22 @@ __operations: Dict[int, Operation] = {
     ),
     # $CF
     # $D0
-    # $D1
+    # $D1 - CMP (Indirect),Y
+    0xD1: Operation(
+        Interpreter.cmp,
+        cycles=5,
+        addressing_mode=AddressingMode.INDIRECT_INDEXED,
+        page_cross_penalty=True
+    ),
     # $D2
     # $D3
     # $D4
-    # $D5
+    # $D5 - CMP Zero Page,X
+    0xD5: Operation(
+        Interpreter.cmp,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $D6 - DEC Zero Page,X
     0xD6: Operation(
         Interpreter.dec,
@@ -1464,11 +1554,23 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $D9
+    # $D9 - CMP Absolute,Y
+    0xD9: Operation(
+        Interpreter.cmp,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
+        page_cross_penalty=True
+    ),
     # $DA
     # $DB
     # $DC
-    # $DD
+    # $DD - CMP Absolute,X
+    0xDD: Operation(
+        Interpreter.cmp,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $DE - DEC Absolute,X
     0xDE: Operation(
         Interpreter.dec,
@@ -1476,7 +1578,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
     ),
     # $DF
-    # $E0
+    # $E0 - CPX #Immediate
+    0xE0: Operation(
+        Interpreter.cpx,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $E1 - SBC (Indirect,X)
     0xE1: Operation(
         Interpreter.sbc,
@@ -1485,7 +1592,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $E2
     # $E3
-    # $E4
+    # $E4 - CPX Zero Page
+    0xE4: Operation(
+        Interpreter.cpx,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $E5 - SBC Zero Page
     0xE5: Operation(
         Interpreter.sbc,
@@ -1518,7 +1630,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.IMPLICIT
     ),
     # $EB
-    # $EC
+    # $EC - CPX Absolute
+    0xEC: Operation(
+        Interpreter.cpx,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $ED - SBC Absolute
     0xED: Operation(
         Interpreter.sbc,

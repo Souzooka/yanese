@@ -441,6 +441,175 @@ class TestOperationsOfficial:
         Interpreter.clv(Instruction(cpu))
         assert cpu.flags.v is False
 
+    def test_cmp_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#CMP
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xC9] is not None
+        assert operations[0xC5] is not None
+        assert operations[0xD5] is not None
+        assert operations[0xCD] is not None
+        assert operations[0xDD] is not None
+        assert operations[0xD9] is not None
+        assert operations[0xC1] is not None
+        assert operations[0xD1] is not None
+
+        # #Immediate
+        operation = operations[0xC9]
+        compare_params(operation, Interpreter.cmp, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0xC5]
+        compare_params(operation, Interpreter.cmp, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Zero Page,X
+        operation = operations[0xD5]
+        compare_params(operation, Interpreter.cmp, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0xCD]
+        compare_params(operation, Interpreter.cmp, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+        # Absolute,X
+        operation = operations[0xDD]
+        compare_params(operation, Interpreter.cmp, 4, AddressingMode.INDEXED_ABSOLUTE_X, True, ArgumentType.VALUE)
+
+        # Absolute,Y
+        operation = operations[0xD9]
+        compare_params(operation, Interpreter.cmp, 4, AddressingMode.INDEXED_ABSOLUTE_Y, True, ArgumentType.VALUE)
+
+        # (Indirect,X)
+        operation = operations[0xC1]
+        compare_params(operation, Interpreter.cmp, 6, AddressingMode.INDEXED_INDIRECT, False, ArgumentType.VALUE)
+
+        # (Indirect),Y
+        operation = operations[0xD1]
+        compare_params(operation, Interpreter.cmp, 5, AddressingMode.INDIRECT_INDEXED, True, ArgumentType.VALUE)
+
+    def test_cmp(self):
+        # Should set appropriate flags
+
+        cpu = new_cpu()
+        cpu.a.set_value(0x90)
+        Interpreter.cmp(Instruction(cpu, 0x10))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+        cpu.a.set_value(0x90)
+        Interpreter.cmp(Instruction(cpu, 0x20))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0x90)
+        Interpreter.cmp(Instruction(cpu, 0x90))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0x10)
+        Interpreter.cmp(Instruction(cpu, 0x90))
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_cpx_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#CPX
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xE0] is not None
+        assert operations[0xE4] is not None
+        assert operations[0xEC] is not None
+
+        # #Immediate
+        operation = operations[0xE0]
+        compare_params(operation, Interpreter.cpx, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0xE4]
+        compare_params(operation, Interpreter.cpx, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0xEC]
+        compare_params(operation, Interpreter.cpx, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+    def test_cpx(self):
+        # Should set appropriate flags
+
+        cpu = new_cpu()
+        cpu.x.set_value(0x90)
+        Interpreter.cpx(Instruction(cpu, 0x10))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+        cpu.x.set_value(0x90)
+        Interpreter.cpx(Instruction(cpu, 0x20))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.x.set_value(0x90)
+        Interpreter.cpx(Instruction(cpu, 0x90))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.x.set_value(0x10)
+        Interpreter.cpx(Instruction(cpu, 0x90))
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_cpy(self):
+        # Should set appropriate flags
+
+        cpu = new_cpu()
+        cpu.y.set_value(0x90)
+        Interpreter.cpy(Instruction(cpu, 0x10))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+        cpu.y.set_value(0x90)
+        Interpreter.cpy(Instruction(cpu, 0x20))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.y.set_value(0x90)
+        Interpreter.cpy(Instruction(cpu, 0x90))
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.y.set_value(0x10)
+        Interpreter.cpy(Instruction(cpu, 0x90))
+        assert cpu.flags.c is False
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_cpy_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#CPY
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xC0] is not None
+        assert operations[0xC4] is not None
+        assert operations[0xCC] is not None
+
+        # #Immediate
+        operation = operations[0xC0]
+        compare_params(operation, Interpreter.cpy, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0xC4]
+        compare_params(operation, Interpreter.cpy, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0xCC]
+        compare_params(operation, Interpreter.cpy, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
     def test_dec_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#DEC
         # Test that the operation entries conform to what is listed on NES DEV
