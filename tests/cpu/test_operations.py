@@ -299,6 +299,52 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is True
 
+    def test_bit_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BIT
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x24] is not None
+        assert operations[0x2C] is not None
+
+        # Zero Page
+        operation = operations[0x24]
+        compare_params(operation, Interpreter.bit, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0x2C]
+        compare_params(operation, Interpreter.bit, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+    def test_bit(self):
+        # Should set flags appropriately
+        # BIT is a bitwise AND check against memory, in which the z flag is set if the result is 0
+        # Flags v,n are set if the bit6,bit7 of memory are set respectively.
+        cpu = new_cpu()
+        address = 4
+
+        cpu.a.set_value(0b11111111)
+        Interpreter.bit(Instruction(cpu, 0))
+        assert cpu.flags.z is True
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b00001111)
+        Interpreter.bit(Instruction(cpu, 0b00001110))
+        assert cpu.flags.z is False
+        assert cpu.flags.v is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b0)
+        Interpreter.bit(Instruction(cpu, 0b01000000))
+        assert cpu.flags.z is True
+        assert cpu.flags.v is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b0)
+        Interpreter.bit(Instruction(cpu, 0b10000000))
+        assert cpu.flags.z is True
+        assert cpu.flags.v is False
+        assert cpu.flags.n is True
+
     def test_clc_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#CLC
         # Test that the operation entries conform to what is listed on NES DEV

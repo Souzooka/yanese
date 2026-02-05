@@ -132,6 +132,26 @@ class Interpreter:
         cpu.a.set_value(result)
 
     @staticmethod
+    def bit(instr: Instruction) -> None:
+        """
+        BIT - Bit Test
+
+        BIT modifies flags, but does not change memory or registers.
+        The zero flag is set depending on the result of the accumulator AND memory value,
+        effectively applying a bitmask and then checking if any bits are set.
+        Bits 7 and 6 of the memory value are loaded directly into the negative and overflow flags.
+        """
+        cpu = instr.cpu
+        memory = instr.argument
+        result = byte.to_u8(cpu.a.get_value() & memory)
+        # z = result == 0
+        cpu.flags.z = result == 0
+        # v = memory bit 6
+        cpu.flags.v = bool(memory & (1 << 6))
+        # n = memory bit 7
+        cpu.flags.n = bool(memory & (1 << 7))
+
+    @staticmethod
     def brk(instr: Instruction) -> None:
         pass
 
@@ -655,6 +675,7 @@ _arguments = {
     Interpreter.adc: ArgumentType.VALUE,
     Interpreter.asl: ArgumentType.ADDRESS,
     Interpreter.asl_a: ArgumentType.NONE,
+    Interpreter.bit: ArgumentType.VALUE,
     Interpreter.clc: ArgumentType.NONE,
     Interpreter.cld: ArgumentType.NONE,
     Interpreter.cli: ArgumentType.NONE,
@@ -808,7 +829,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $22
     # $23
-    # $24
+    # $24 - BIT Zero Page
+    0x24: Operation(
+        Interpreter.bit,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $25 - AND Zero Page
     0x25: Operation(
         Interpreter.and_bitwise,
@@ -836,7 +862,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.IMPLICIT
     ),
     # $2B
-    # $2C
+    # $2C - BIT Absolute
+    0x2C: Operation(
+        Interpreter.bit,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $2D - AND Absolute
     0x2D: Operation(
         Interpreter.and_bitwise,
