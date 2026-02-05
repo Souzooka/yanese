@@ -574,6 +574,74 @@ class TestOperationsOfficial:
         operation = operations[0x88]
         compare_params(operation, Interpreter.dey, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
 
+    def test_eor_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#EOR
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x49] is not None
+        assert operations[0x45] is not None
+        assert operations[0x55] is not None
+        assert operations[0x4D] is not None
+        assert operations[0x5D] is not None
+        assert operations[0x59] is not None
+        assert operations[0x41] is not None
+        assert operations[0x51] is not None
+
+        # #Immediate
+        operation = operations[0x49]
+        compare_params(operation, Interpreter.eor, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0x45]
+        compare_params(operation, Interpreter.eor, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Zero Page,X
+        operation = operations[0x55]
+        compare_params(operation, Interpreter.eor, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0x4D]
+        compare_params(operation, Interpreter.eor, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+        # Absolute,X
+        operation = operations[0x5D]
+        compare_params(operation, Interpreter.eor, 4, AddressingMode.INDEXED_ABSOLUTE_X, True, ArgumentType.VALUE)
+
+        # Absolute,Y
+        operation = operations[0x59]
+        compare_params(operation, Interpreter.eor, 4, AddressingMode.INDEXED_ABSOLUTE_Y, True, ArgumentType.VALUE)
+
+        # (Indirect,X)
+        operation = operations[0x41]
+        compare_params(operation, Interpreter.eor, 6, AddressingMode.INDEXED_INDIRECT, False, ArgumentType.VALUE)
+
+        # (Indirect),Y
+        operation = operations[0x51]
+        compare_params(operation, Interpreter.eor, 5, AddressingMode.INDIRECT_INDEXED, True, ArgumentType.VALUE)
+
+    def test_eor(self):
+        # Should bitwise exlusive-or the accumulator and provided value
+        # and update the appropriate flags.
+
+        cpu = new_cpu()
+        cpu.a.set_value(0)
+        Interpreter.eor(Instruction(cpu, 0))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b00001110)
+        Interpreter.eor(Instruction(cpu, 0b01100000))
+        assert cpu.a.get_value() == 0b01101110
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b11100000)
+        Interpreter.eor(Instruction(cpu, 0b01100001))
+        assert cpu.a.get_value() == 0b10000001
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
     def test_inc_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#INC
         # Test that the operation entries conform to what is listed on NES DEV

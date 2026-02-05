@@ -220,6 +220,21 @@ class Interpreter:
         cpu.flags.update_zero_and_negative(result)
 
     @staticmethod
+    def eor(instr: Instruction) -> None:
+        """
+        EOR - Bitwise Exclusive OR
+
+        EOR exclusive-ORs a memory value and the accumulator, bit by bit.
+        """
+        cpu = instr.cpu
+        value = instr.argument
+        result = byte.to_u8(cpu.a.get_value() ^ value)
+        cpu.a.set_value(result)
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
     def inc(instr: Instruction) -> None:
         """
         INC - Increment Memory
@@ -647,6 +662,7 @@ _arguments = {
     Interpreter.dec: ArgumentType.ADDRESS,
     Interpreter.dex: ArgumentType.NONE,
     Interpreter.dey: ArgumentType.NONE,
+    Interpreter.eor: ArgumentType.VALUE,
     Interpreter.inc: ArgumentType.ADDRESS,
     Interpreter.inx: ArgumentType.NONE,
     Interpreter.iny: ArgumentType.NONE,
@@ -889,11 +905,21 @@ __operations: Dict[int, Operation] = {
     ),
     # $3F
     # $40
-    # $41
+    # $41 - EOR (Indirect,X)
+    0x41: Operation(
+        Interpreter.eor,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_INDIRECT
+    ),
     # $42
     # $43
     # $44
-    # $45
+    # $45 - EOR Zero Page
+    0x45: Operation(
+        Interpreter.eor,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $46 - LSR Zero Page
     0x46: Operation(
         Interpreter.lsr,
@@ -902,7 +928,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $47
     # $48
-    # $49
+    # $49 - EOR #Immediate
+    0x49: Operation(
+        Interpreter.eor,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $4A - LSR Logical Shift Right
     0x4A: Operation(
         Interpreter.lsr_a,
@@ -911,7 +942,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $4B
     # $4C
-    # $4D
+    # $4D - EOR Absolute
+    0x4D: Operation(
+        Interpreter.eor,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $4E - LSR Absolute
     0x4E: Operation(
         Interpreter.lsr,
@@ -920,11 +956,22 @@ __operations: Dict[int, Operation] = {
     ),
     # $4F
     # $50
-    # $51
+    # $51 - EOR (Indirect),Y
+    0x51: Operation(
+        Interpreter.eor,
+        cycles=5,
+        addressing_mode=AddressingMode.INDIRECT_INDEXED,
+        page_cross_penalty=True
+    ),
     # $52
     # $53
     # $54
-    # $55
+    # $55 - EOR Zero Page,X
+    0x55: Operation(
+        Interpreter.eor,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $56 - LSR Zero Page,X
     0x56: Operation(
         Interpreter.lsr,
@@ -938,11 +985,23 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $59
+    # $59 - EOR Absolute,Y
+    0x59: Operation(
+        Interpreter.eor,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
+        page_cross_penalty=True
+    ),
     # $5A
     # $5B
     # $5C
-    # $5D
+    # $5D - EOR Absolute,X
+    0x5D: Operation(
+        Interpreter.eor,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $5E - LSR Absolute,X
     0x5E: Operation(
         Interpreter.lsr,
