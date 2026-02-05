@@ -658,6 +658,16 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is True
 
+    def test_dex_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#DEX
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xCA] is not None
+
+        # Implied
+        operation = operations[0xCA]
+        compare_params(operation, Interpreter.dex, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
     def test_dex(self):
         # Should decrement X and update appropriate flags
         cpu = new_cpu()
@@ -680,6 +690,16 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is True
 
+    def test_dey_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#DEY
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x88] is not None
+
+        # Implied
+        operation = operations[0x88]
+        compare_params(operation, Interpreter.dey, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
     def test_dey(self):
         # Should decrement Y and update appropriate flags
         cpu = new_cpu()
@@ -701,6 +721,31 @@ class TestOperationsOfficial:
         assert cpu.y.get_value() == 0xFE
         assert cpu.flags.z is False
         assert cpu.flags.n is True
+
+    def test_inc_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#INC
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xE6] is not None
+        assert operations[0xF6] is not None
+        assert operations[0xEE] is not None
+        assert operations[0xFE] is not None
+
+        # Zero Page
+        operation = operations[0xE6]
+        compare_params(operation, Interpreter.inc, 5, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
+
+        # Zero Page,X
+        operation = operations[0xF6]
+        compare_params(operation, Interpreter.inc, 6, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
+
+        # Absolute
+        operation = operations[0xEE]
+        compare_params(operation, Interpreter.inc, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+        # Absolute,X
+        operation = operations[0xFE]
+        compare_params(operation, Interpreter.inc, 7, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
 
     def test_inc(self):
         # Should decrement the value at the memory address and update appropriate flags
@@ -725,8 +770,18 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is False
 
+    def test_inx_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#INX
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xE8] is not None
+
+        # Implied
+        operation = operations[0xE8]
+        compare_params(operation, Interpreter.inx, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
     def test_inx(self):
-        # Should increment X and update appropriate flagss
+        # Should increment X and update appropriate flags
         cpu = new_cpu()
 
         cpu.x.set_value(0xFE)
@@ -747,8 +802,18 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is False
 
+    def test_iny_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#INY
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xC8] is not None
+
+        # Implied
+        operation = operations[0xC8]
+        compare_params(operation, Interpreter.iny, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
     def test_iny(self):
-        # Should increment Y and update appropriate flagss
+        # Should increment Y and update appropriate flags
         cpu = new_cpu()
 
         cpu.y.set_value(0xFE)
@@ -768,26 +833,6 @@ class TestOperationsOfficial:
         assert cpu.y.get_value() == 0x2
         assert cpu.flags.z is False
         assert cpu.flags.n is False
-
-    def test_dex_params(self):
-        # https://www.nesdev.org/wiki/Instruction_reference#DEX
-        # Test that the operation entries conform to what is listed on NES DEV
-
-        assert operations[0xCA] is not None
-
-        # Implied
-        operation = operations[0xCA]
-        compare_params(operation, Interpreter.dex, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
-
-    def test_dey_params(self):
-        # https://www.nesdev.org/wiki/Instruction_reference#DEY
-        # Test that the operation entries conform to what is listed on NES DEV
-
-        assert operations[0x88] is not None
-
-        # Implied
-        operation = operations[0x88]
-        compare_params(operation, Interpreter.dey, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
 
     def test_eor_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#EOR
@@ -856,51 +901,6 @@ class TestOperationsOfficial:
         assert cpu.a.get_value() == 0b10000001
         assert cpu.flags.z is False
         assert cpu.flags.n is True
-
-    def test_inc_params(self):
-        # https://www.nesdev.org/wiki/Instruction_reference#INC
-        # Test that the operation entries conform to what is listed on NES DEV
-
-        assert operations[0xE6] is not None
-        assert operations[0xF6] is not None
-        assert operations[0xEE] is not None
-        assert operations[0xFE] is not None
-
-        # Zero Page
-        operation = operations[0xE6]
-        compare_params(operation, Interpreter.inc, 5, AddressingMode.ZERO_PAGE, False, ArgumentType.ADDRESS)
-
-        # Zero Page,X
-        operation = operations[0xF6]
-        compare_params(operation, Interpreter.inc, 6, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.ADDRESS)
-
-        # Absolute
-        operation = operations[0xEE]
-        compare_params(operation, Interpreter.inc, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
-
-        # Absolute,X
-        operation = operations[0xFE]
-        compare_params(operation, Interpreter.inc, 7, AddressingMode.INDEXED_ABSOLUTE_X, False, ArgumentType.ADDRESS)
-
-    def test_inx_params(self):
-        # https://www.nesdev.org/wiki/Instruction_reference#INX
-        # Test that the operation entries conform to what is listed on NES DEV
-
-        assert operations[0xE8] is not None
-
-        # Implied
-        operation = operations[0xE8]
-        compare_params(operation, Interpreter.inx, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
-
-    def test_iny_params(self):
-        # https://www.nesdev.org/wiki/Instruction_reference#INY
-        # Test that the operation entries conform to what is listed on NES DEV
-
-        assert operations[0xC8] is not None
-
-        # Implied
-        operation = operations[0xC8]
-        compare_params(operation, Interpreter.iny, 2, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
 
     def test_lda_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#LDA
