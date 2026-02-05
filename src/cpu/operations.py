@@ -357,6 +357,21 @@ class Interpreter:
         pass
 
     @staticmethod
+    def ora(instr: Instruction) -> None:
+        """
+        ORA - Bitwise OR
+
+        ORA inclusive-ORs a memory value and the accumulator, bit by bit.
+        """
+        cpu = instr.cpu
+        value = instr.argument
+        result = byte.to_u8(cpu.a.get_value() | value)
+        cpu.a.set_value(result)
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
     def _rol(cpu: CPU, value: int) -> None:
         # Result is just the value rotated to the left once.
         # (e.g. 0b10101000 becomes 0b01010001)
@@ -641,6 +656,7 @@ _arguments = {
     Interpreter.lsr: ArgumentType.ADDRESS,
     Interpreter.lsr_a: ArgumentType.NONE,
     Interpreter.nop: ArgumentType.NONE,
+    Interpreter.ora: ArgumentType.VALUE,
     Interpreter.rol: ArgumentType.ADDRESS,
     Interpreter.rol_a: ArgumentType.NONE,
     Interpreter.ror: ArgumentType.ADDRESS,
@@ -663,11 +679,21 @@ _arguments = {
 # fmt: off
 __operations: Dict[int, Operation] = {
     # $00
-    # $01
+    # $01 - ORA (Indirect,X)
+    0x01: Operation(
+        Interpreter.ora,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_INDIRECT
+    ),
     # $02
     # $03
     # $04
-    # $05
+    # $05 - ORA Zero Page
+    0x05: Operation(
+        Interpreter.ora,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $06 - ASL Zero Page
     0x06: Operation(
         Interpreter.asl,
@@ -676,7 +702,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $07
     # $08
-    # $09
+    # $09 - ORA #Immediate
+    0x09: Operation(
+        Interpreter.ora,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $0A - ASL Accumulator
     0x0A: Operation(
         Interpreter.asl_a,
@@ -685,7 +716,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $0B
     # $0C
-    # $0D
+    # $0D - ORA Absolute
+    0x0D: Operation(
+        Interpreter.ora,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $0E - ASL Absolute
     0x0E: Operation(
         Interpreter.asl,
@@ -694,11 +730,22 @@ __operations: Dict[int, Operation] = {
     ),
     # $0F
     # $10
-    # $11
+    # $11 - ORA (Indirect),Y
+    0x11: Operation(
+        Interpreter.ora,
+        cycles=5,
+        addressing_mode=AddressingMode.INDIRECT_INDEXED,
+        page_cross_penalty=True
+    ),
     # $12
     # $13
     # $14
-    # $15
+    # $15 - ORA Zero Page,X
+    0x15: Operation(
+        Interpreter.ora,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $16 - ASL Zero Page,X
     0x16: Operation(
         Interpreter.asl,
@@ -712,11 +759,23 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $19
+    # $19 - ORA Absolute,Y
+    0x19: Operation(
+        Interpreter.ora,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
+        page_cross_penalty=True
+    ),
     # $1A
     # $1B
     # $1C
-    # $1D
+    # $1D - ORA Absolute,X
+    0x1D: Operation(
+        Interpreter.ora,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $1E
     0x1E: Operation(
         Interpreter.asl,

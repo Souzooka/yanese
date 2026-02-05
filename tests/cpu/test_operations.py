@@ -900,6 +900,74 @@ class TestOperationsOfficial:
         cpu = new_cpu(CPUWrapper)
         Interpreter.nop(Instruction(cpu, 0))
 
+    def test_ora_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#ORA
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x09] is not None
+        assert operations[0x05] is not None
+        assert operations[0x15] is not None
+        assert operations[0x0D] is not None
+        assert operations[0x1D] is not None
+        assert operations[0x19] is not None
+        assert operations[0x01] is not None
+        assert operations[0x11] is not None
+
+        # #Immediate
+        operation = operations[0x09]
+        compare_params(operation, Interpreter.ora, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0x05]
+        compare_params(operation, Interpreter.ora, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Zero Page,X
+        operation = operations[0x15]
+        compare_params(operation, Interpreter.ora, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0x0D]
+        compare_params(operation, Interpreter.ora, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+        # Absolute,X
+        operation = operations[0x1D]
+        compare_params(operation, Interpreter.ora, 4, AddressingMode.INDEXED_ABSOLUTE_X, True, ArgumentType.VALUE)
+
+        # Absolute,Y
+        operation = operations[0x19]
+        compare_params(operation, Interpreter.ora, 4, AddressingMode.INDEXED_ABSOLUTE_Y, True, ArgumentType.VALUE)
+
+        # (Indirect,X)
+        operation = operations[0x01]
+        compare_params(operation, Interpreter.ora, 6, AddressingMode.INDEXED_INDIRECT, False, ArgumentType.VALUE)
+
+        # (Indirect),Y
+        operation = operations[0x11]
+        compare_params(operation, Interpreter.ora, 5, AddressingMode.INDIRECT_INDEXED, True, ArgumentType.VALUE)
+
+    def test_ora(self):
+        # Should bitwise or the accumulator and provided value
+        # and update the appropriate flags.
+
+        cpu = new_cpu()
+        cpu.a.set_value(0)
+        Interpreter.ora(Instruction(cpu, 0))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b00001110)
+        Interpreter.ora(Instruction(cpu, 0b01100000))
+        assert cpu.a.get_value() == 0b01101110
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b11100000)
+        Interpreter.ora(Instruction(cpu, 0b11100001))
+        assert cpu.a.get_value() == 0b11100001
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
     def test_rol_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#ROL
         # Test that the operation entries conform to what is listed on NES DEV
