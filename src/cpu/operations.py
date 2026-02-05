@@ -81,6 +81,21 @@ class Interpreter:
         cpu.flags.update_zero_and_negative(byte.to_u8(result))
 
     @staticmethod
+    def and_bitwise(instr: Instruction) -> None:
+        """
+        AND - Bitwise AND
+
+        This ANDs a memory value and the accumulator, bit by bit.
+        """
+        cpu = instr.cpu
+        value = instr.argument
+        result = byte.to_u8(cpu.a.get_value() & value)
+        cpu.a.set_value(result)
+        # z = result == 0
+        # n = result bit 7
+        cpu.flags.update_zero_and_negative(result)
+
+    @staticmethod
     def _asl(cpu: CPU, value: int) -> None:
         # Result is just the value shifted to the left once
         result = byte.to_u8(value << 1)
@@ -606,6 +621,7 @@ class Operation:
 # All individual instruction types should accept the same argument type,
 # regardless of addressing mode
 _arguments = {
+    Interpreter.and_bitwise: ArgumentType.VALUE,
     Interpreter.adc: ArgumentType.VALUE,
     Interpreter.asl: ArgumentType.ADDRESS,
     Interpreter.asl_a: ArgumentType.NONE,
@@ -709,11 +725,21 @@ __operations: Dict[int, Operation] = {
     ),
     # $1F
     # $20
-    # $21
+    # $21 - AND (Indirect,X)
+    0x21: Operation(
+        Interpreter.and_bitwise,
+        cycles=6,
+        addressing_mode=AddressingMode.INDEXED_INDIRECT
+    ),
     # $22
     # $23
     # $24
-    # $25
+    # $25 - AND Zero Page
+    0x25: Operation(
+        Interpreter.and_bitwise,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $26 - ROL Zero Page
     0x26: Operation(
         Interpreter.rol,
@@ -722,7 +748,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $27
     # $28
-    # $29
+    # $29 - AND #Immediate
+    0x29: Operation(
+        Interpreter.and_bitwise,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $2A - ROL Accumulator
     0x2A: Operation(
         Interpreter.rol_a,
@@ -731,7 +762,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $2B
     # $2C
-    # $2D
+    # $2D - AND Absolute
+    0x2D: Operation(
+        Interpreter.and_bitwise,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $2E - ROL Absolute
     0x2E: Operation(
         Interpreter.rol,
@@ -740,11 +776,22 @@ __operations: Dict[int, Operation] = {
     ),
     # $2F
     # $30
-    # $31
+    # $31 - AND (Indirect),Y
+    0x31: Operation(
+        Interpreter.and_bitwise,
+        cycles=5,
+        addressing_mode=AddressingMode.INDIRECT_INDEXED,
+        page_cross_penalty=True
+    ),
     # $32
     # $33
     # $34
-    # $35
+    # $35 - AND Zero Page,X
+    0x35: Operation(
+        Interpreter.and_bitwise,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $36 - ROL Zero Page,X
     0x36: Operation(
         Interpreter.rol,
@@ -758,11 +805,23 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $39
+    # $39 - AND Absolute,Y
+    0x39: Operation(
+        Interpreter.and_bitwise,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
+        page_cross_penalty=True
+    ),
     # $3A
     # $3B
     # $3C
-    # $3D
+    # $3D - AND Absolute,X
+    0x3D: Operation(
+        Interpreter.and_bitwise,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $3E - ROL Absolute,X
     0x3E: Operation(
         Interpreter.rol,

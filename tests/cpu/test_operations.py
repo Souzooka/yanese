@@ -134,6 +134,74 @@ class TestOperationsOfficial:
         assert cpu.flags.v is False
         assert cpu.flags.n is False
 
+    def test_and_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#AND
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x29] is not None
+        assert operations[0x25] is not None
+        assert operations[0x35] is not None
+        assert operations[0x2D] is not None
+        assert operations[0x3D] is not None
+        assert operations[0x39] is not None
+        assert operations[0x21] is not None
+        assert operations[0x31] is not None
+
+        # #Immediate
+        operation = operations[0x29]
+        compare_params(operation, Interpreter.and_bitwise, 2, AddressingMode.IMMEDIATE, False, ArgumentType.VALUE)
+
+        # Zero Page
+        operation = operations[0x25]
+        compare_params(operation, Interpreter.and_bitwise, 3, AddressingMode.ZERO_PAGE, False, ArgumentType.VALUE)
+
+        # Zero Page,X
+        operation = operations[0x35]
+        compare_params(operation, Interpreter.and_bitwise, 4, AddressingMode.INDEXED_ZERO_PAGE_X, False, ArgumentType.VALUE)
+
+        # Absolute
+        operation = operations[0x2D]
+        compare_params(operation, Interpreter.and_bitwise, 4, AddressingMode.ABSOLUTE, False, ArgumentType.VALUE)
+
+        # Absolute,X
+        operation = operations[0x3D]
+        compare_params(operation, Interpreter.and_bitwise, 4, AddressingMode.INDEXED_ABSOLUTE_X, True, ArgumentType.VALUE)
+
+        # Absolute,Y
+        operation = operations[0x39]
+        compare_params(operation, Interpreter.and_bitwise, 4, AddressingMode.INDEXED_ABSOLUTE_Y, True, ArgumentType.VALUE)
+
+        # (Indirect,X)
+        operation = operations[0x21]
+        compare_params(operation, Interpreter.and_bitwise, 6, AddressingMode.INDEXED_INDIRECT, False, ArgumentType.VALUE)
+
+        # (Indirect),Y
+        operation = operations[0x31]
+        compare_params(operation, Interpreter.and_bitwise, 5, AddressingMode.INDIRECT_INDEXED, True, ArgumentType.VALUE)
+
+    def test_and(self):
+        # Should bitwise and the accumulator and provided value
+        # and update the appropriate flags.
+
+        cpu = new_cpu()
+        cpu.a.set_value(0)
+        Interpreter.and_bitwise(Instruction(cpu, 0))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b10001110)
+        Interpreter.and_bitwise(Instruction(cpu, 0b00000110))
+        assert cpu.a.get_value() == 0b0110
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+
+        cpu.a.set_value(0b11111101)
+        Interpreter.and_bitwise(Instruction(cpu, 0b10101010))
+        assert cpu.a.get_value() == 0b10101000
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
     def test_asl_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#ASL
         # Test that the operation entries conform to what is listed on NES DEV
@@ -1104,7 +1172,6 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.v is False
         assert cpu.flags.n is False
-
 
     def test_sec_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#SEC

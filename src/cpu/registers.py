@@ -81,7 +81,7 @@ class FlagsRegister:
         """
         Updates the zero flag of the status register based on the provided value.
         """
-        self.z = value == 0
+        self.z = (value & 0xFF) == 0
 
     def update_negative(self, value: int) -> None:
         """
