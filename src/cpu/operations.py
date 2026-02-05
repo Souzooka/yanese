@@ -417,6 +417,18 @@ class Interpreter:
         cpu.pc.set_value(address)
 
     @staticmethod
+    def jsr(instr: Instruction) -> None:
+        """
+        JSR - Jump to Subroutine
+
+        JSR pushes the current program counter to the stack and then sets the program counter to a new value.
+        """
+        # NOTE: The CPU implementation expends the instruction bytes (3) so we push PC - 1 instead of PC + 2
+        cpu = instr.cpu
+        cpu.stack.push16(cpu.pc.get_value() - 1)
+        cpu.pc.set_value(instr.argument)
+
+    @staticmethod
     def lda(instr: Instruction) -> None:
         """
         LDA - Load A
@@ -818,6 +830,7 @@ _arguments = {
     Interpreter.inx: ArgumentType.NONE,
     Interpreter.iny: ArgumentType.NONE,
     Interpreter.jmp: ArgumentType.ADDRESS,
+    Interpreter.jsr: ArgumentType.ADDRESS,
     Interpreter.lda: ArgumentType.VALUE,
     Interpreter.ldx: ArgumentType.VALUE,
     Interpreter.ldy: ArgumentType.VALUE,
@@ -957,7 +970,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
     ),
     # $1F
-    # $20
+    # $20 - JSR Absolute
+    0x20: Operation(
+        Interpreter.jsr,
+        cycles=6,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $21 - AND (Indirect,X)
     0x21: Operation(
         Interpreter.and_bitwise,

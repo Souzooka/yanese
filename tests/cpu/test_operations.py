@@ -1134,6 +1134,25 @@ class TestOperationsOfficial:
         Interpreter.jmp(Instruction(cpu, 4))
         assert cpu.pc.get_value() == 4
 
+    def test_jsr_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#JSR
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x20] is not None
+
+        # Absolute
+        operation = operations[0x20]
+        compare_params(operation, Interpreter.jsr, 6, AddressingMode.ABSOLUTE, False, ArgumentType.ADDRESS)
+
+    def test_jsr(self):
+        # Should push PC - 1 to stack and jump to argument
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0x1234)
+        Interpreter.jsr(Instruction(cpu, 0x2000))
+        assert cpu.pc.get_value() == 0x2000
+        assert cpu.stack.pop16() == 0x1233
+
     def test_lda_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#LDA
         # Test that the operation entries conform to what is listed on NES DEV
