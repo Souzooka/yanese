@@ -132,6 +132,38 @@ class Interpreter:
         cpu.a.set_value(result)
 
     @staticmethod
+    def _branch(cpu: CPU, address: int, condition: bool) -> None:
+        # If the branch failed, ignore the extra cycle from a page cross
+        if not condition:
+            cpu.extra_cycles = 0
+            return
+
+        # Branch successful, so we add an extra cycle and set PC
+        cpu.extra_cycles += 1
+        cpu.pc.set_value(address)
+
+    @staticmethod
+    def bcc(instr: Instruction) -> None:
+        """
+        BCC - Branch if Carry Clear
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, not cpu.flags.c)
+
+    @staticmethod
+    def bcs(instr: Instruction) -> None:
+        """
+        BCS - Branch if Carry Set
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, cpu.flags.c)
+
+    @staticmethod
+    def beq(instr: Instruction) -> None:
+        """
+        BEQ - Branch if Equal
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, cpu.flags.z)
+
+    @staticmethod
     def bit(instr: Instruction) -> None:
         """
         BIT - Bit Test
@@ -152,8 +184,43 @@ class Interpreter:
         cpu.flags.n = bool(memory & (1 << 7))
 
     @staticmethod
+    def bmi(instr: Instruction) -> None:
+        """
+        BMI - Branch if Minus
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, cpu.flags.n)
+
+    @staticmethod
+    def bne(instr: Instruction) -> None:
+        """
+        BNE - Branch if Not Equal
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, not cpu.flags.z)
+
+    @staticmethod
+    def bpl(instr: Instruction) -> None:
+        """
+        BPL - Branch if Plus
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, not cpu.flags.n)
+
+    @staticmethod
     def brk(instr: Instruction) -> None:
         pass
+
+    @staticmethod
+    def bvc(instr: Instruction) -> None:
+        """
+        BVC - Branch if Overflow Clear
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, not cpu.flags.v)
+
+    @staticmethod
+    def bvs(instr: Instruction) -> None:
+        """
+        BVS - Branch if Overflow Set
+        """
+        Interpreter._branch((cpu := instr.cpu), instr.argument, cpu.flags.v)
 
     @staticmethod
     def clc(instr: Instruction) -> None:
@@ -716,7 +783,15 @@ _arguments = {
     Interpreter.adc: ArgumentType.VALUE,
     Interpreter.asl: ArgumentType.ADDRESS,
     Interpreter.asl_a: ArgumentType.NONE,
+    Interpreter.bcc: ArgumentType.ADDRESS,
+    Interpreter.bcs: ArgumentType.ADDRESS,
+    Interpreter.beq: ArgumentType.ADDRESS,
     Interpreter.bit: ArgumentType.VALUE,
+    Interpreter.bmi: ArgumentType.ADDRESS,
+    Interpreter.bne: ArgumentType.ADDRESS,
+    Interpreter.bpl: ArgumentType.ADDRESS,
+    Interpreter.bvc: ArgumentType.ADDRESS,
+    Interpreter.bvs: ArgumentType.ADDRESS,
     Interpreter.clc: ArgumentType.NONE,
     Interpreter.cld: ArgumentType.NONE,
     Interpreter.cli: ArgumentType.NONE,
@@ -810,7 +885,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $0F
-    # $10
+    # $10 - BPL Relative
+    0x10: Operation(
+        Interpreter.bpl,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $11 - ORA (Indirect),Y
     0x11: Operation(
         Interpreter.ora,
@@ -925,7 +1006,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $2F
-    # $30
+    # $30 - BMI Relative
+    0x30: Operation(
+        Interpreter.bmi,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $31 - AND (Indirect),Y
     0x31: Operation(
         Interpreter.and_bitwise,
@@ -1030,7 +1117,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $4F
-    # $50
+    # $50 - BVC Relative
+    0x50: Operation(
+        Interpreter.bvc,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $51 - EOR (Indirect),Y
     0x51: Operation(
         Interpreter.eor,
@@ -1135,7 +1228,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $6F
-    # $70
+    # $70 - BVS Relative
+    0x70: Operation(
+        Interpreter.bvs,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $71 - ADC (Indirect),Y
     0x71: Operation(
         Interpreter.adc,
@@ -1250,7 +1349,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $8F
-    # $90
+    # $90 - BCC Relative
+    0x90: Operation(
+        Interpreter.bcc,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $91 - STA (Indirect),Y
     0x91: Operation(
         Interpreter.sta,
@@ -1382,7 +1487,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $AF
-    # $B0
+    # $B0 - BCS Relative
+    0xB0: Operation(
+        Interpreter.bcs,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $B1 - LDA (Indirect),Y
     0xB1: Operation(
         Interpreter.lda,
@@ -1524,7 +1635,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $CF
-    # $D0
+    # $D0 - BNE Relative
+    0xD0: Operation(
+        Interpreter.bne,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $D1 - CMP (Indirect),Y
     0xD1: Operation(
         Interpreter.cmp,
@@ -1649,7 +1766,13 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ABSOLUTE
     ),
     # $EF
-    # $F0
+    # $F0 - BEQ Relative
+    0xF0: Operation(
+        Interpreter.beq,
+        cycles=2,
+        addressing_mode=AddressingMode.RELATIVE,
+        page_cross_penalty=True
+    ),
     # $F1 - SBC (Indirect),Y
     0xF1: Operation(
         Interpreter.sbc,

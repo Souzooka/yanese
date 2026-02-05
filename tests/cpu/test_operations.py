@@ -299,6 +299,84 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is True
 
+    def test_bcc_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BCC
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x90] is not None
+
+        # Relative
+        operation = operations[0x90]
+        compare_params(operation, Interpreter.bcc, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_bcc(self):
+        # Should branch if the carry flag is clear
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.c = False
+        Interpreter.bcc(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.c = True
+        Interpreter.bcc(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+    def test_bcs_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BCS
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xB0] is not None
+
+        # Relative
+        operation = operations[0xB0]
+        compare_params(operation, Interpreter.bcs, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_bcs(self):
+        # Should branch if the carry flag is set
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.c = False
+        Interpreter.bcs(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.c = True
+        Interpreter.bcs(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
+
+    def test_beq_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BEQ
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xF0] is not None
+
+        # Relative
+        operation = operations[0xF0]
+        compare_params(operation, Interpreter.beq, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_beq(self):
+        # Should branch if the zero flag is set
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.z = False
+        Interpreter.beq(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.z = True
+        Interpreter.beq(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
+
     def test_bit_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#BIT
         # Test that the operation entries conform to what is listed on NES DEV
@@ -344,6 +422,136 @@ class TestOperationsOfficial:
         assert cpu.flags.z is True
         assert cpu.flags.v is False
         assert cpu.flags.n is True
+
+    def test_bmi_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BMI
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x30] is not None
+
+        # Relative
+        operation = operations[0x30]
+        compare_params(operation, Interpreter.bmi, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_bmi(self):
+        # Should branch if the negative flag is set
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.n = False
+        Interpreter.bmi(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.n = True
+        Interpreter.bmi(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
+
+    def test_bne_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BNE
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0xD0] is not None
+
+        # Relative
+        operation = operations[0xD0]
+        compare_params(operation, Interpreter.bne, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_bne(self):
+        # Should branch if the zero flag is clear
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.z = False
+        Interpreter.bne(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.z = True
+        Interpreter.bne(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+    def test_bpl_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BPL
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x10] is not None
+
+        # Relative
+        operation = operations[0x10]
+        compare_params(operation, Interpreter.bpl, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_bpl(self):
+        # Should branch if the negative flag is clear
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.n = False
+        Interpreter.bpl(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.n = True
+        Interpreter.bpl(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+    def test_bvc_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BVC
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x50] is not None
+
+        # Relative
+        operation = operations[0x50]
+        compare_params(operation, Interpreter.bvc, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_bvc(self):
+        # Should branch if the overflow flag is clear
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.v = False
+        Interpreter.bvc(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.v = True
+        Interpreter.bvc(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+    def test_bvs_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BVS
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x70] is not None
+
+        # Relative
+        operation = operations[0x70]
+        compare_params(operation, Interpreter.bvs, 2, AddressingMode.RELATIVE, True, ArgumentType.ADDRESS)
+
+    def test_bvc(self):
+        # Should branch if the overflow flag is clear
+        address = 4
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.v = False
+        Interpreter.bvs(Instruction(cpu, address))
+        assert cpu.pc.get_value() == 0
+
+        cpu = new_cpu()
+        cpu.pc.set_value(0)
+        cpu.flags.v = True
+        Interpreter.bvs(Instruction(cpu, address))
+        assert cpu.pc.get_value() == address
 
     def test_clc_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#CLC
