@@ -963,7 +963,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $02
     # $03
-    # $04
+    # $04 - NOP Zero Page
+    0x04: Operation(
+        Interpreter.nop,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $05 - ORA Zero Page
     0x05: Operation(
         Interpreter.ora,
@@ -996,7 +1001,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.IMPLICIT
     ),
     # $0B
-    # $0C
+    # $0C - NOP Absolute
+    0x0C: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.ABSOLUTE
+    ),
     # $0D - ORA Absolute
     0x0D: Operation(
         Interpreter.ora,
@@ -1026,7 +1036,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $12
     # $13
-    # $14
+    # $14 - NOP Zero Page,X
+    0x14: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $15 - ORA Zero Page,X
     0x15: Operation(
         Interpreter.ora,
@@ -1053,9 +1068,20 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
         page_cross_penalty=True
     ),
-    # $1A
+    # $1A - NOP Implied
+    0x1A: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $1B
-    # $1C
+    # $1C - NOP Absolute,X
+    0x1C: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $1D - ORA Absolute,X
     0x1D: Operation(
         Interpreter.ora,
@@ -1157,7 +1183,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $32
     # $33
-    # $34
+    # $34 - NOP Zero Page,X
+    0x34: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $35 - AND Zero Page,X
     0x35: Operation(
         Interpreter.and_bitwise,
@@ -1184,9 +1215,20 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
         page_cross_penalty=True
     ),
-    # $3A
+    # $3A - NOP Implied
+    0x3A: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $3B
-    # $3C
+    # $3C - NOP Absolute,X
+    0x3C: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $3D - AND Absolute,X
     0x3D: Operation(
         Interpreter.and_bitwise,
@@ -1215,7 +1257,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $42
     # $43
-    # $44
+    # $44 - NOP Zero Page
+    0x44: Operation(
+        Interpreter.nop,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $45 - EOR Zero Page
     0x45: Operation(
         Interpreter.eor,
@@ -1283,7 +1330,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $52
     # $53
-    # $54
+    # $54 - NOP Zero Page,X
+    0x54: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $55 - EOR Zero Page,X
     0x55: Operation(
         Interpreter.eor,
@@ -1310,9 +1362,20 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
         page_cross_penalty=True
     ),
-    # $5A
+    # $5A - NOP Implied
+    0x5A: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $5B
-    # $5C
+    # $5C - NOP Absolute,X
+    0x5C: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $5D - EOR Absolute,X
     0x5D: Operation(
         Interpreter.eor,
@@ -1341,7 +1404,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $62
     # $63
-    # $64
+    # $64 - NOP Zero Page
+    0x64: Operation(
+        Interpreter.nop,
+        cycles=3,
+        addressing_mode=AddressingMode.ZERO_PAGE
+    ),
     # $65 - ADC Zero Page
     0x65: Operation(
         Interpreter.adc,
@@ -1409,7 +1477,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $72
     # $73
-    # $74
+    # $74 - NOP Zero Page,X
+    0x74: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $75 - ADC Zero Page,X
     0x75: Operation(
         Interpreter.adc,
@@ -1436,9 +1509,20 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
         page_cross_penalty=True
     ),
-    # $7A
+    # $7A - NOP Implied
+    0x7A: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $7B
-    # $7C
+    # $7C - NOP Absolute,X
+    0x7C: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $7D - ADC Absolute,X
     0x7D: Operation(
         Interpreter.adc,
@@ -1453,14 +1537,24 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
     ),
     # $7F
-    # $80
+    # $80 - NOP #Immediate
+    0x80: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $81 - STA (Indirect,X)
     0x81: Operation(
         Interpreter.sta,
         cycles=6,
         addressing_mode=AddressingMode.INDEXED_INDIRECT
     ),
-    # $82
+    # $82 - NOP #Immediate
+    0x82: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $83
     # $84 - STY Zero Page
     0x84: Operation(
@@ -1487,7 +1581,12 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMPLICIT
     ),
-    # $89
+    # $89 - NOP #Immediate
+    0x89: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMMEDIATE
+    ),
     # $8A - TXA Implied
     0x8A: Operation(
         Interpreter.txa,
@@ -1816,7 +1915,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $D2
     # $D3
-    # $D4
+    # $D4 - NOP Zero Page,X
+    0xD4: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $D5 - CMP Zero Page,X
     0xD5: Operation(
         Interpreter.cmp,
@@ -1843,9 +1947,20 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
         page_cross_penalty=True
     ),
-    # $DA
+    # $DA - NOP Implied
+    0xDA: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $DB
-    # $DC
+    # $DC - NOP Absolute,X
+    0xDC: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $DD - CMP Absolute,X
     0xDD: Operation(
         Interpreter.cmp,
@@ -1905,7 +2020,7 @@ __operations: Dict[int, Operation] = {
         cycles=2,
         addressing_mode=AddressingMode.IMMEDIATE
     ),
-    # $EA - NOP
+    # $EA - NOP Implied (Official)
     0xEA: Operation(
         Interpreter.nop,
         cycles=2,
@@ -1947,7 +2062,12 @@ __operations: Dict[int, Operation] = {
     ),
     # $F2
     # $F3
-    # $F4
+    # $F4 - NOP Zero Page,X
+    0xF4: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ZERO_PAGE_X
+    ),
     # $F5 - SBC Zero Page,X
     0xF5: Operation(
         Interpreter.sbc,
@@ -1974,9 +2094,20 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_Y,
         page_cross_penalty=True
     ),
-    # $FA
+    # $FA - NOP Implied
+    0xFA: Operation(
+        Interpreter.nop,
+        cycles=2,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $FB
-    # $FC
+    # $FC - NOP Absolute,X
+    0xFC: Operation(
+        Interpreter.nop,
+        cycles=4,
+        addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X,
+        page_cross_penalty=True
+    ),
     # $FD - SBC Absolute,X
     0xFD: Operation(
         Interpreter.sbc,

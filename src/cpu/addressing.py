@@ -42,7 +42,9 @@ class _AddressingModes:
     EX: LDA #10
     """
 
-    IMMEDIATE_address = unsupported
+    @staticmethod
+    def IMMEDIATE_address(cpu: CPU, address: int, page_cross_penalty: bool) -> int:
+        return 0
 
     @staticmethod
     def IMMEDIATE_value(cpu: CPU, value: int, page_cross_penalty: bool) -> int:
