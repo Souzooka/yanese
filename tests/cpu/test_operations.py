@@ -1529,6 +1529,97 @@ class TestOperationsOfficial:
         assert cpu.flags.z is False
         assert cpu.flags.n is True
 
+    def test_pha_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#PHA
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x48] is not None
+
+        operation = operations[0x48]
+        compare_params(operation, Interpreter.pha, 3, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_pha(self):
+        # Should put value of accumulator on stack
+        cpu = new_cpu()
+        cpu.a.set_value(42)
+        Interpreter.pha(Instruction(cpu))
+        assert cpu.stack.pop() == 42
+
+    def test_php_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#PHP
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x08] is not None
+
+        operation = operations[0x08]
+        compare_params(operation, Interpreter.php, 3, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_php(self):
+        # Should put value of flags on stack (with B flag set)
+        cpu = new_cpu()
+        cpu.flags.c = True
+        cpu.flags.z = True
+        cpu.flags.n = True
+        cpu.flags.i = True
+        cpu.flags.d = True
+        cpu.flags.v = True
+        Interpreter.php(Instruction(cpu))
+        assert cpu.stack.pop() == 0b11111111
+
+    def test_pla_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#PLA
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x68] is not None
+
+        operation = operations[0x68]
+        compare_params(operation, Interpreter.pla, 4, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_pla(self):
+        # Should pull the value from stack into A and update flags
+        cpu = new_cpu()
+        cpu.stack.push(0)
+        Interpreter.pla(Instruction(cpu))
+        assert cpu.a.get_value() == 0
+        assert cpu.flags.z is True
+        assert cpu.flags.n is False
+        cpu.stack.push(1)
+        Interpreter.pla(Instruction(cpu))
+        assert cpu.flags.z is False
+        assert cpu.flags.n is False
+        cpu.stack.push(0xFF)
+        Interpreter.pla(Instruction(cpu))
+        assert cpu.flags.z is False
+        assert cpu.flags.n is True
+
+    def test_plp_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#PLP
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x28] is not None
+
+        operation = operations[0x28]
+        compare_params(operation, Interpreter.plp, 4, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_plp(self):
+        # Should pull flags from stack into flags register. Effect of i changing is delayed 1 instruction
+        cpu = new_cpu()
+        cpu.stack.push(0b11111111)
+        Interpreter.pre_operation(cpu)
+        Interpreter.plp(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.n is True
+        assert cpu.flags.i is False
+        assert cpu.flags.d is True
+        assert cpu.flags.v is True
+
+        Interpreter.pre_operation(cpu)
+        Interpreter.nop(Instruction(cpu))
+        Interpreter.post_operation(cpu)
+        assert cpu.flags.i is True
+
     def test_rol_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#ROL
         # Test that the operation entries conform to what is listed on NES DEV

@@ -35,14 +35,21 @@ class Interpreter:
         Interpreter._handle_delayed_interrupt(cpu)
 
     @staticmethod
-    def _handle_delayed_interrupt(cpu: CPU) -> None:
+    def _handle_delayed_interrupt(cpu: CPU, flush: bool = False) -> None:
         if cpu.delayed_interrupt_flag is not None:
             instructions, flag = cpu.delayed_interrupt_flag
-            if instructions > 0:
-                cpu.delayed_interrupt_flag = (instructions - 1, flag)
-            else:
+            if flush or instructions <= 0:
                 cpu.flags.i = flag
                 cpu.delayed_interrupt_flag = None
+            else:
+                cpu.delayed_interrupt_flag = (instructions - 1, flag)
+
+    @staticmethod
+    def _create_delayed_interrupt(cpu: CPU, value: bool) -> None:
+        # Flush previous change on interrupt disable flag
+        Interpreter._handle_delayed_interrupt(cpu, flush=True)
+        # Set up a delayed change of the interrupt flag (after next instruction)
+        cpu.delayed_interrupt_flag = (1, value)
 
     @staticmethod
     def _rmw(cpu: CPU, address: int) -> int:
@@ -255,10 +262,8 @@ class Interpreter:
         This effect is delayed by 1 instruction.
         """
         cpu = instr.cpu
-        # Flush previous change on interrupt disable flag
-        Interpreter._handle_delayed_interrupt(cpu)
         # Set up a delayed clear of the interrupt flag (after next instruction)
-        cpu.delayed_interrupt_flag = (1, False)
+        Interpreter._create_delayed_interrupt(cpu, False)
 
     @staticmethod
     def clv(instr: Instruction) -> None:
@@ -544,6 +549,59 @@ class Interpreter:
         cpu.flags.update_zero_and_negative(result)
 
     @staticmethod
+    def pha(instr: Instruction) -> None:
+        """
+        PHA - Push A
+
+        PHA stores the value of A to the current stack position and then decrements the stack pointer.
+        """
+        cpu = instr.cpu
+        cpu.stack.push(cpu.a.get_value())
+
+    @staticmethod
+    def php(instr: Instruction) -> None:
+        """
+        PHP - Push Processor Status
+
+        PHP stores a byte to the stack containing the 6 status flags and B flag and then decrements the stack pointer.
+        """
+        cpu = instr.cpu
+        cpu.stack.push(cpu.flags.to_u8(b_flag=True))
+
+    @staticmethod
+    def pla(instr: Instruction) -> None:
+        """
+        PLA - Pull A
+
+        PLA increments the stack pointer and then loads the value at that stack position into A.
+        """
+        cpu = instr.cpu
+        value = cpu.stack.pop()
+        cpu.a.set_value(value)
+        # z - result == 0
+        # n - result bit 7
+        cpu.flags.update_zero_and_negative(value)
+
+    @staticmethod
+    def plp(instr: Instruction) -> None:
+        """
+        PLP - Pull Processor Status
+
+        PLP increments the stack pointer and then loads the value at that stack position into the 6 status flags.
+        """
+        cpu = instr.cpu
+        # We preserve this for now because the effect of the i flag changing is delayed by 1 instruction
+        last_i_flag = cpu.flags.i
+
+        # Pop flags from stack (i effect is delayed)
+        cpu.flags.from_u8(cpu.stack.pop())
+        delayed_i = cpu.flags.i
+        cpu.flags.i = last_i_flag
+
+        # Set up a delayed change of the interrupt flag (after next instruction)
+        Interpreter._create_delayed_interrupt(cpu, delayed_i)
+
+    @staticmethod
     def _rol(cpu: CPU, value: int) -> None:
         # Result is just the value rotated to the left once.
         # (e.g. 0b10101000 becomes 0b01010001)
@@ -692,10 +750,8 @@ class Interpreter:
         This effect is delayed by 1 instruction.
         """
         cpu = instr.cpu
-        # Flush previous change on interrupt disable flag
-        Interpreter._handle_delayed_interrupt(cpu)
-        # Set up a delayed clear of the interrupt flag (after next instruction)
-        cpu.delayed_interrupt_flag = (1, True)
+        # Set up a delayed set of the interrupt flag (after next instruction)
+        Interpreter._create_delayed_interrupt(cpu, True)
 
     @staticmethod
     def sta(instr: Instruction) -> None:
@@ -866,6 +922,10 @@ _arguments = {
     Interpreter.lsr_a: ArgumentType.NONE,
     Interpreter.nop: ArgumentType.NONE,
     Interpreter.ora: ArgumentType.VALUE,
+    Interpreter.pha: ArgumentType.NONE,
+    Interpreter.php: ArgumentType.NONE,
+    Interpreter.pla: ArgumentType.NONE,
+    Interpreter.plp: ArgumentType.NONE,
     Interpreter.rol: ArgumentType.ADDRESS,
     Interpreter.rol_a: ArgumentType.NONE,
     Interpreter.ror: ArgumentType.ADDRESS,
@@ -917,7 +977,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ZERO_PAGE
     ),
     # $07
-    # $08
+    # $08 - PHP Implied
+    0x08: Operation(
+        Interpreter.php,
+        cycles=3,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $09 - ORA #Immediate
     0x09: Operation(
         Interpreter.ora,
@@ -1038,7 +1103,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ZERO_PAGE
     ),
     # $27
-    # $28
+    # $28 - PLP Implied
+    0x28: Operation(
+        Interpreter.plp,
+        cycles=4,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $29 - AND #Immediate
     0x29: Operation(
         Interpreter.and_bitwise,
@@ -1159,7 +1229,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ZERO_PAGE
     ),
     # $47
-    # $48
+    # $48 - PHA Implied
+    0x48: Operation(
+        Interpreter.pha,
+        cycles=3,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $49 - EOR #Immediate
     0x49: Operation(
         Interpreter.eor,
@@ -1280,7 +1355,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.ZERO_PAGE
     ),
     # $67
-    # $68
+    # $68 - PLA Implied
+    0x68: Operation(
+        Interpreter.pla,
+        cycles=4,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $69 - ADC #Immediate
     0x69: Operation(
         Interpreter.adc,
