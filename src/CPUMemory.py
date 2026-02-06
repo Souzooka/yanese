@@ -6,6 +6,7 @@ from src.util import byte
 
 if TYPE_CHECKING:
     from src.controllers.ControllerBase import ControllerBase
+    from src.mappers.Mapper import Mapper
 
 
 class CPUMemory:
@@ -17,6 +18,7 @@ class CPUMemory:
     __slots__ = ["__ppu", "__apu", "__controllers", "__mapper", "__wram", "__open_bus_value"]
 
     __controllers: Optional[List[ControllerBase]]
+    __mapper: Optional[Mapper]
 
     def __init__(self):
         self.__ppu = None
@@ -63,10 +65,10 @@ class CPUMemory:
         elif 0x4020 <= address <= 0xFFFF:
             # $4020-$FFFF maps to the cartridge board, which can pretty much do whatever it wants
             if self.__mapper is not None:
-                # NOTE: The mapper's on_read function may return None if the program reads from an unmapped
+                # NOTE: The mapper's cpu_read function may return None if the program reads from an unmapped
                 # address; this is handled at the bottom of the function where we return the open bus value
                 # (which is just the last read value from the CPU bus)
-                value = self.__mapper.on_read(address)
+                value = self.__mapper.cpu_read(address)
 
         # Test for open bus, i.e. we read from nowhere actually mapped.
         # https://www.nesdev.org/wiki/Open_bus_behavior
@@ -102,7 +104,7 @@ class CPUMemory:
         if 0x4020 <= address <= 0xFFFF:
             # $4020-$FFFF maps to the cartridge board, which can pretty much do whatever it wants
             if self.__mapper is not None:
-                return self.__mapper.on_write(address, value)
+                return self.__mapper.cpu_write(address, value)
 
         # If we get down here (after mapping everything)
         # something has gone seriously wrong

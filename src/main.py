@@ -5,6 +5,8 @@ import sys
 import numpy as np
 import pygame
 
+from src.NES import NES
+
 SCALE = 4
 H = 256
 V = 240
@@ -38,6 +40,19 @@ def rainbow(tick, array):
     array.fill(color)
 
 
+def do_nes(file_path: str):
+    nes = NES()
+    with open(file_path, "rb") as cart:
+        nes.load_cartridge(cart)
+
+    while True:
+        clock.tick(60.0)
+        nes.run()
+
+        if any(event.type == pygame.QUIT for event in pygame.event.get()):
+            return
+
+
 while True:
     clock.tick(60.0)
     rainbow(pygame.time.get_ticks(), frame_buffer)
@@ -47,5 +62,13 @@ while True:
     pygame.display.flip()
     if any(event.type == pygame.QUIT for event in pygame.event.get()):
         break
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            sys.exit()
+        if event.type == pygame.DROPFILE:
+            do_nes(event.file)
+            sys.exit()
+
+sys.exit()
 
 # /TEMPORARY CODE
