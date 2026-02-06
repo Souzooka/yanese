@@ -40,6 +40,12 @@ def rainbow(tick, array):
     array.fill(color)
 
 
+def on_frame(frame_buffer):
+    pygame.surfarray.blit_array(surface, frame_buffer)
+    screen.blit(pygame.transform.scale(surface, (H * SCALE, V * SCALE)), (0, 0))
+    pygame.display.flip()
+
+
 def do_nes(file_path: str):
     nes = NES()
     with open(file_path, "rb") as cart:
@@ -47,7 +53,7 @@ def do_nes(file_path: str):
 
     while True:
         clock.tick(60.0)
-        nes.run()
+        nes.run(on_frame)
 
         if any(event.type == pygame.QUIT for event in pygame.event.get()):
             return
@@ -60,8 +66,6 @@ while True:
     pygame.surfarray.blit_array(surface, frame_buffer)
     screen.blit(pygame.transform.scale(surface, (H * SCALE, V * SCALE)), (0, 0))
     pygame.display.flip()
-    if any(event.type == pygame.QUIT for event in pygame.event.get()):
-        break
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()

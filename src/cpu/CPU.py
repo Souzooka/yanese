@@ -81,7 +81,7 @@ class CPU:
         self.stack.push(flags)
 
         # Advance 7 cycles
-        self.cycles = 7
+        self.cycles += 7
 
         # Set the i flag so we don't get interrupted
         self.flags.i = True
@@ -132,6 +132,7 @@ class CPU:
         """
         Executes one instruction. Returns number of cycles executed.
         """
+        original_pc = self.pc.get_value()
         operation = self.__fetch_operation()
         op_input = self.__fetch_input(operation)
         argument = self.__fetch_argument(operation, op_input)

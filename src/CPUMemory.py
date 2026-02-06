@@ -7,6 +7,7 @@ from src.util import byte
 if TYPE_CHECKING:
     from src.controllers.ControllerBase import ControllerBase
     from src.mappers.Mapper import Mapper
+    from src.ppu.PPU import PPU
 
 
 class CPUMemory:
@@ -35,7 +36,7 @@ class CPUMemory:
         # a non-mapped address
         self.__open_bus_value = 0
 
-    def on_load(self, ppu=None, apu=None, controllers: Optional[List[ControllerBase]] = None, mapper=None):
+    def on_load(self, ppu: PPU = None, apu=None, controllers: Optional[List[ControllerBase]] = None, mapper=None):
         self.__ppu = ppu
         self.__apu = apu
         self.__controllers = controllers
@@ -49,6 +50,12 @@ class CPUMemory:
             # is mirrored/repeated.
             address &= 0x7FF
             value = self.__wram[address]
+
+        elif 0x2000 <= address <= 0x3FFF:
+            # $2000-$2007 = NES PPU registers
+            # This repeats every 8 bytes.
+            address &= 0x2007
+            value = self.__ppu.registers.read(address)
 
         elif address == 0x4016 or address == 0x4017:
             # $4016 = controller port 0
@@ -91,6 +98,12 @@ class CPUMemory:
             address &= 0x7FF
             self.__wram[address] = value
             return
+
+        if 0x2000 <= address <= 0x3FFF:
+            # $2000-$2007 = NES PPU registers
+            # This repeats every 8 bytes.
+            address &= 0x2007
+            self.__ppu.registers.write(address, value)
 
         if address == 0x4016:
             # $4016 = controller port 0

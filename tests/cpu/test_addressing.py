@@ -38,7 +38,9 @@ class TestAddressing:
         assert mode.input_size == 1
 
         # Address not supported
-        assert is_unsupported(mode.get_address, cpu, 0, False)
+        # NOTE: We'll just let this be supported (returning 0) for convenience for unofficial NOP
+        # assert is_unsupported(mode.get_address, cpu, 0, False)
+        assert mode.get_address(cpu, 0, False) == 0
 
         # No transformation needs to be done on immediate values, the CPU fetches the input and the
         # input gets spat back out as is.
