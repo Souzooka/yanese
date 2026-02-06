@@ -501,6 +501,33 @@ class TestOperationsOfficial:
         Interpreter.bpl(Instruction(cpu, address))
         assert cpu.pc.get_value() == 0
 
+    def test_brk_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#BRK
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x00] is not None
+
+        # Implied
+        operation = operations[0x00]
+        compare_params(operation, Interpreter.brk, 7, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_brk(self):
+        # Should invoke an interrupt
+
+        cpu = new_cpu()
+        _interrupt = cpu.interrupt
+        called = False
+
+        def interrupt(*args, **kwargs):
+            nonlocal called
+            called = True
+            _interrupt(*args, **kwargs)
+
+        cpu.interrupt = interrupt
+
+        Interpreter.brk(Instruction(cpu))
+        assert called
+
     def test_bvc_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#BVC
         # Test that the operation entries conform to what is listed on NES DEV
@@ -1685,6 +1712,46 @@ class TestOperationsOfficial:
         assert cpu.flags.c is False
         assert cpu.flags.z is False
         assert cpu.flags.n is False
+
+    def test_rti_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#RTI
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x40] is not None
+
+        operation = operations[0x40]
+        compare_params(operation, Interpreter.rti, 6, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_rti(self):
+        # Should pull PC and flags from stack.
+        # Interrupt flag is changed immediately.
+        cpu = new_cpu()
+        cpu.stack.push16(0x1234)
+        cpu.stack.push(0b11001111)
+        Interpreter.rti(Instruction(cpu))
+        assert cpu.pc.get_value() == 0x1234
+        assert cpu.flags.c is True
+        assert cpu.flags.z is True
+        assert cpu.flags.i is True
+        assert cpu.flags.d is True
+        assert cpu.flags.v is True
+        assert cpu.flags.n is True
+
+    def test_rts_params(self):
+        # https://www.nesdev.org/wiki/Instruction_reference#RTS
+        # Test that the operation entries conform to what is listed on NES DEV
+
+        assert operations[0x60] is not None
+
+        operation = operations[0x60]
+        compare_params(operation, Interpreter.rts, 6, AddressingMode.IMPLICIT, False, ArgumentType.NONE)
+
+    def test_rts(self):
+        # Should pull PC from stack, and set PC to PC + 1
+        cpu = new_cpu()
+        cpu.stack.push16(0x1234)
+        Interpreter.rts(Instruction(cpu))
+        assert cpu.pc.get_value() == 0x1235
 
     def test_sbc_params(self):
         # https://www.nesdev.org/wiki/Instruction_reference#SBC

@@ -60,10 +60,12 @@ class CPU:
         if source in self.__irq_requesters:
             del self.__irq_requesters[self.__irq_requesters.index(source)]
 
-    def interrupt(self, interrupt: Interrupt) -> int:
+    def interrupt(self, interrupt_id: int) -> int:
         """
         Triggers an interrupt. Returns number of CPU cycles executed.
         """
+        interrupt = interrupts[interrupt_id]
+
         # First of all we ignore IRQ if the i flag is set
         if interrupt.id == Interrupt.IRQ and self.flags.i:
             return 0

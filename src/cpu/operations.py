@@ -4,6 +4,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING, Callable, Dict, List
 
 from src.cpu.addressing import AddressingMode
+from src.interrupts import Interrupt
 from src.util import byte
 
 if TYPE_CHECKING:
@@ -206,7 +207,12 @@ class Interpreter:
 
     @staticmethod
     def brk(instr: Instruction) -> None:
-        pass
+        """
+        BRK - Break (software IRQ)
+
+        BRK triggers an interrupt request (IRQ).
+        """
+        instr.cpu.interrupt(Interrupt.BRK)
 
     @staticmethod
     def bvc(instr: Instruction) -> None:
@@ -614,6 +620,27 @@ class Interpreter:
         cpu.a.set_value(result)
 
     @staticmethod
+    def rti(instr: Instruction) -> None:
+        """
+        RTI - Return from Interrupt
+
+        RTI returns from an interrupt handler, first pulling the 6 status flags from the stack and then pulling the new program counter.
+        """
+        cpu = instr.cpu
+        cpu.flags.from_u8(cpu.stack.pop())
+        cpu.pc.set_value(cpu.stack.pop16())
+
+    @staticmethod
+    def rts(instr: Instruction) -> None:
+        """
+        RTS - Return from Subroutine
+
+        RTS pulls an address from the stack into the program counter and then increments the program counter.
+        """
+        cpu = instr.cpu
+        cpu.pc.set_value(cpu.stack.pop16() + 1)
+
+    @staticmethod
     def sbc(instr: Instruction) -> None:
         """
         SBC - Subtract with Carry
@@ -813,6 +840,7 @@ _arguments = {
     Interpreter.bmi: ArgumentType.ADDRESS,
     Interpreter.bne: ArgumentType.ADDRESS,
     Interpreter.bpl: ArgumentType.ADDRESS,
+    Interpreter.brk: ArgumentType.NONE,
     Interpreter.bvc: ArgumentType.ADDRESS,
     Interpreter.bvs: ArgumentType.ADDRESS,
     Interpreter.clc: ArgumentType.NONE,
@@ -842,6 +870,8 @@ _arguments = {
     Interpreter.rol_a: ArgumentType.NONE,
     Interpreter.ror: ArgumentType.ADDRESS,
     Interpreter.ror_a: ArgumentType.NONE,
+    Interpreter.rti: ArgumentType.NONE,
+    Interpreter.rts: ArgumentType.NONE,
     Interpreter.sbc: ArgumentType.VALUE,
     Interpreter.sec: ArgumentType.NONE,
     Interpreter.sed: ArgumentType.NONE,
@@ -859,7 +889,12 @@ _arguments = {
 
 # fmt: off
 __operations: Dict[int, Operation] = {
-    # $00
+    # $00 - BRK Implied
+    0x00: Operation(
+        Interpreter.brk,
+        cycles=7,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $01 - ORA (Indirect,X)
     0x01: Operation(
         Interpreter.ora,
@@ -1096,7 +1131,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
     ),
     # $3F
-    # $40
+    # $40 - RTI Implied
+    0x40: Operation(
+        Interpreter.rti,
+        cycles=6,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $41 - EOR (Indirect,X)
     0x41: Operation(
         Interpreter.eor,
@@ -1212,7 +1252,12 @@ __operations: Dict[int, Operation] = {
         addressing_mode=AddressingMode.INDEXED_ABSOLUTE_X
     ),
     # $5F
-    # $60
+    # $60 - RTS Implied
+    0x60: Operation(
+        Interpreter.rts,
+        cycles=6,
+        addressing_mode=AddressingMode.IMPLICIT
+    ),
     # $61 - ADC (Indirect,X)
     0x61: Operation(
         Interpreter.adc,
